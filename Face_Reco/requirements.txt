@@ -1,0 +1,17 @@
+# GUI Framework
+PySide6>=6.8.0
+
+# Computer Vision & Face Recognition
+opencv-python==4.9.0.80
+mediapipe==0.10.9
+numpy==1.26.3
+
+# Database
+supabase==1.0.3
+
+# Utilities
+python-dotenv==1.0.0
+Pillow==10.2.0
+
+# Date/Time handling
+python-dateutil==2.8.2

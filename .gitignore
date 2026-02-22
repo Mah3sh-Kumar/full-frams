@@ -1,0 +1,21 @@
+# Environment Variables — NEVER commit secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Expo / React Native
+FRAMS/node_modules/
+FRAMS/.expo/
+FRAMS/dist/
+
+# Python / Face_Reco
+Face_Reco/__pycache__/
+Face_Reco/*.pyc
+Face_Reco/.venv/
+Face_Reco/venv/
+
+# OS artefacts
+.DS_Store
+Thumbs.db

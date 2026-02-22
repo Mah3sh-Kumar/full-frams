@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\table\snapshots.py
+# hypothesis_version: 6.148.7
+
+[1000, ',', '0', '0.10.0', '0.11.0', 'added-data-files', 'added-delete-files', 'added-files-size', 'added-records', 'append', 'delete', 'deleted-data-files', 'deleted-records', 'manifest-list', 'metadata-file', 'operation', 'overwrite', 'parent-snapshot-id', 'partitions.', 'removed-delete-files', 'removed-files-size', 'replace', 'schema-id', 'sequence-number', 'snapshot-id', 'timestamp-ms', 'total-data-files', 'total-delete-files', 'total-files-size', 'total-records', 'true']

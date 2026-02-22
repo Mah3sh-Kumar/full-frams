@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\table\metadata.py
+# hypothesis_version: 6.148.7
+
+['after', 'before', 'current-schema-id', 'current-snapshot-id', 'current_snapshot_id', 'default-spec-id', 'field-id', 'fields', 'format-version', 'format_version', 'last-column-id', 'last-partition-id', 'last-sequence-number', 'last-updated-ms', 'little', 'metadata-log', 'next-row-id', 'partition-spec', 'partition-specs', 'partition-statistics', 'partition_spec', 'properties', 'refs', 'schema', 'schema-id', 'schema_id', 'schemas', 'sequence_number', 'snapshot-log', 'snapshots', 'sort-orders', 'sort_orders', 'spec-id', 'table-uuid']

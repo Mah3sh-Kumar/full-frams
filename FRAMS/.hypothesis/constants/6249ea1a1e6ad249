@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\supabase_functions\_async\functions_client.py
+# hypothesis_version: 6.148.7
+
+['Authorization', 'Content-Type', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'User-Agent', 'any', 'application/json', 'body', 'error', 'forceFunctionRegion', 'headers', 'json', 'region', 'responseType', 'status_code', 'text/plain', 'true', 'x-region', 'x-relay-header']

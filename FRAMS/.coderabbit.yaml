@@ -1,0 +1,40 @@
+reviews:
+  auto_review: true
+  review_level: detailed
+  language_detection: true
+
+files:
+  include:
+    - "**/*.py"
+    - "**/*.sh"
+    - "**/*.js"
+    - "**/*.ts"
+    - "**/*.yaml"
+    - "**/*.yml"
+  exclude:
+    - "**/docs/**"
+    - "**/*.md"
+    - "**/node_modules/**"
+    - "**/__pycache__/**"
+
+comments:
+  inline: true
+  summary: true
+
+project_context:
+  description: >
+    FRAMS (Face Recognition Attendance Management System) is an IoT-enabled
+    system using OpenCV-based face recognition on Raspberry Pi with a backend
+    database and mobile application integration. Performance, security, and
+    accuracy are critical.
+  constraints:
+    - Avoid insecure face recognition practices
+    - Ensure privacy and data protection
+    - Optimize for low-power Raspberry Pi hardware
+    - Avoid blocking I/O and heavy CPU usage
+    - Use secure credential handling (no hardcoded secrets)
+
+additional_focus:
+  - OpenCV face detection accuracy
+  - False positive minimization
+  - Camera resource management

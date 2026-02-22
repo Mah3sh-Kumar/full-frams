@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\strictyaml\ruamel\util.py
+# hypothesis_version: 6.148.7
+
+[' -', '#', "'", "''", '- ', ':', 'lazy_self', 'utf-8', '{0}{1}:', '{0}{1}: {2}', '|\n']

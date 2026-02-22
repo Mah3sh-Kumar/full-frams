@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\realtime\_async\presence.py
+# hypothesis_version: 6.148.7
+
+['joins', 'leaves', 'metas', 'phx_ref', 'phx_ref_prev', 'presence_ref']

@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\expressions\visitors.py
+# hypothesis_version: 6.148.7
+
+[200, '!=', '<', '<=', '==', '>', '>=', 'T', 'in', 'nan', 'not in']

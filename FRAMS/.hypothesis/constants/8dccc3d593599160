@@ -1,0 +1,4 @@
+# file: E:\SEM_6_project\FRAMS\FaceRecognition\src\database_handler.py
+# hypothesis_version: 6.148.7
+
+[1.0, 60.0, 128, 'attendance', 'cache', 'date', 'device_id', 'encoding', 'face_encoding', 'id', 'id, face_encoding', 'offline_queue.json', 'present', 'r', 'service_role_key', 'status', 'student_id', 'students', 'supabase', 'system', 'timestamp', 'url', 'w']

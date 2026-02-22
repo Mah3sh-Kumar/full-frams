@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\supabase_auth\constants.py
+# hypothesis_version: 6.148.7
+
+['%Y-%m-%d', '2024-01-01', 'X-Client-Info', 'supabase.auth.token']

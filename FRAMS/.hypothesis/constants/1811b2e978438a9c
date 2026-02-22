@@ -1,0 +1,4 @@
+# file: E:\SEM_6_project\FRAMS\FaceRecognition\src\config.py
+# hypothesis_version: 6.148.7
+
+[0.6, 5.0, 240, 300, 320, ',', 'CAMERA_DEVICE_INDEX', 'CAMERA_FPS', 'CAMERA_RESOLUTION', 'DEVICE_ID', 'INFO', 'LOG_LEVEL', 'SUPABASE_URL', 'camera', 'config', 'config.json', 'device_id', 'device_index', 'face_recognition', 'fps', 'hog', 'log_level', 'max_processing_time', 'model', 'pi_device_001', 'r', 'resolution', 'service_role_key', 'supabase', 'system', 'tolerance', 'url']

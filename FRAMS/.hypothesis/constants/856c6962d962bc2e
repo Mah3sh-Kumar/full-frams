@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\table\update\snapshot.py
+# hypothesis_version: 6.148.7
+
+['ExpireSnapshots', 'ManageSnapshots', '_DeleteFiles', '_FastAppendFiles', '_OverwriteFiles', 'branch', 'tag']

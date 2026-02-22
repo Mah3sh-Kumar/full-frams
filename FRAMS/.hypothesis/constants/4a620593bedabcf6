@@ -1,0 +1,4 @@
+# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\table\sorting.py
+# hypothesis_version: 6.148.7
+
+['[', ']', '_', 'asc', 'before', 'desc', 'direction', 'fields', 'null-order', 'nulls-first', 'nulls-last', 'order-id', 'serialization', 'source-id', 'source-ids', 'string', 'transform', 'type']

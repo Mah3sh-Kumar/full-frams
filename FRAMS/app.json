@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "FRAMS",
+    "slug": "frams",
+    "scheme": "myapp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.maheshkumar.frams"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "34c38ee6-4095-4952-a856-486c97f39057"
+      },
+      "EXPO_PUBLIC_SUPABASE_URL": "https://ncoxmajzqatukghhfdjj.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jb3htYWp6cWF0dWtnaGhmZGpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMjkxNDksImV4cCI6MjA3OTcwNTE0OX0.alAxcRRIB5PrW8ltQewTm_JAmexHtRIXYHM_T9AHkgQ"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-secure-store"
+    ]
+  }
+}
