@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Text, TouchableOpacity, StatusBar, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../lib/design-system/ThemeContext';
 import LoadingSpinner from '../../components/design-system/feedback/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
+import { fetchTeacherMetadata } from '../../lib/database';
 
 export default function TeacherDashboard() {
     const navigation = useNavigation();
@@ -18,6 +20,9 @@ export default function TeacherDashboard() {
         totalStudents: 0,
         totalClasses: 0,
         pendingReviews: 0
+    });
+    const [metadata, setMetadata] = useState({
+        department: '',
     });
 
     useEffect(() => {
@@ -54,14 +59,22 @@ export default function TeacherDashboard() {
                 setTeacherName(firstName);
             }
 
+            // Load Teacher Metadata (Department)
+            const { data: metadataRes } = await fetchTeacherMetadata(session.user.id);
+            if (metadataRes) {
+                setMetadata({
+                    department: metadataRes.department || 'Not assigned',
+                });
+            }
+
             // Load Subjects (to get classes)
             const { data: subjects } = await supabase
                 .from('subjects')
-                .select('id, org_class_id')
+                .select('id, class_id')
                 .eq('teacher_id', session.user.id);
 
             if (subjects) {
-                const uniqueClassIds = [...new Set(subjects.map(s => s.org_class_id).filter(Boolean))];
+                const uniqueClassIds = [...new Set(subjects.map(s => s.class_id).filter(Boolean))];
                 const subjectIds = subjects.map(s => s.id);
 
                 // 1. Total Classes
@@ -73,7 +86,7 @@ export default function TeacherDashboard() {
                     const { count } = await supabase
                         .from('students')
                         .select('*', { count: 'exact', head: true })
-                        .in('org_class_id', uniqueClassIds);
+                        .in('class_id', uniqueClassIds);
                     totalStudents = count || 0;
                 }
 
@@ -119,14 +132,19 @@ export default function TeacherDashboard() {
     }
 
     return (
-        <View style={[styles.mainContainer, { backgroundColor: getBackgroundColor() }]}>
-            <StatusBar barStyle="light-content" backgroundColor={tokens.colors.roles.teacher.main} />
+        <SafeAreaView style={[styles.mainContainer, { backgroundColor: tokens.colors.roles.teacher.main }]}>
+            <StatusBar barStyle="light-content" backgroundColor={tokens.colors.roles.teacher.main} translucent={true} />
             {/* Green Header Section */}
             <View style={[styles.welcomeSection, { backgroundColor: tokens.colors.roles.teacher.main }]}>
                 <View style={styles.headerRow}>
                     <View style={styles.welcomeContent}>
                         <Text style={styles.welcomeTitle}>{getGreeting()}, {teacherName}!</Text>
                         <Text style={styles.welcomeSubtitle}>Manage your classes and students</Text>
+                        {metadata.department && (
+                            <Text style={[styles.welcomeSubtitle, { marginTop: 8, opacity: 0.9 }]}>
+                                Department: {metadata.department}
+                            </Text>
+                        )}
                     </View>
                     <View style={styles.quickActions}>
                         <TouchableOpacity
@@ -254,7 +272,7 @@ export default function TeacherDashboard() {
                     </View>
                 </View>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 

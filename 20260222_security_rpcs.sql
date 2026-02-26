@@ -24,6 +24,8 @@ BEGIN;
 -- SECURITY: Only allows admins to change user roles.
 --           Prevents privilege escalation via client-side role updates.
 -- ============================================================
+-- DROP first: CREATE OR REPLACE cannot change return type of existing function
+DROP FUNCTION IF EXISTS public.update_user_role(UUID, TEXT);
 CREATE OR REPLACE FUNCTION public.update_user_role(
     target_user_id UUID,
     new_role       TEXT
@@ -91,6 +93,7 @@ GRANT EXECUTE ON FUNCTION public.update_user_role(UUID, TEXT) TO authenticated;
 --           The anon client cannot call auth.admin.deleteUser() directly.
 --           This is the only safe way to fully remove a user account.
 -- ============================================================
+DROP FUNCTION IF EXISTS public.delete_user(UUID);
 CREATE OR REPLACE FUNCTION public.delete_user(
     target_user_id UUID
 )
@@ -147,6 +150,7 @@ GRANT EXECUTE ON FUNCTION public.delete_user(UUID) TO authenticated;
 -- ============================================================
 -- FUNCTION 3: verify_user  (ensure it exists idempotently)
 -- ============================================================
+DROP FUNCTION IF EXISTS public.verify_user(UUID);
 CREATE OR REPLACE FUNCTION public.verify_user(
     target_user_id UUID
 )
@@ -182,6 +186,7 @@ GRANT EXECUTE ON FUNCTION public.verify_user(UUID) TO authenticated;
 -- ============================================================
 -- FUNCTION 4: unverify_user  (ensure it exists idempotently)
 -- ============================================================
+DROP FUNCTION IF EXISTS public.unverify_user(UUID);
 CREATE OR REPLACE FUNCTION public.unverify_user(
     target_user_id UUID
 )

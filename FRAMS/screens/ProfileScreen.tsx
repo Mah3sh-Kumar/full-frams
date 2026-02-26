@@ -1,129 +1,149 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Text, StatusBar, Platform, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Text, StatusBar, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
 import { updateUserProfile } from '../lib/database';
 import { uploadProfilePicture } from '../lib/storage';
 import { useTheme } from '../lib/design-system/ThemeContext';
 import LoadingSpinner from '../components/design-system/feedback/LoadingSpinner';
 import Button from '../components/design-system/primitives/Button';
 import Input from '../components/design-system/primitives/Input';
-import ImagePickerComponent from '../components/ImagePickerComponent';
+import { useProfile } from '../hooks/useProfile';
+import { ProfileHeader } from '../components/profile/ProfileHeader';
+import { InfoRow } from '../components/profile/InfoRow';
 import type { StackScreenProps } from '@react-navigation/stack';
 
 type Props = StackScreenProps<any, 'Profile'>;
 
 export default function ProfileScreen(_props: Props) {
     const { session, role } = useAuth();
-    const { tokens, getBackgroundColor, getSurfaceColor, getTextColor, getTextSecondaryColor, getRoleColor } = useTheme();
-    const [loading, setLoading] = useState(true);
+    const { tokens, getBackgroundColor, getSurfaceColor, getTextColor, getTextSecondaryColor, getRoleColor, setRole: setThemeRole } = useTheme();
+    const { profile, setProfile, loading, error, fetchProfile } = useProfile(session?.user?.id, role);
+    
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    const [fullName, setFullName] = useState('');
-    const [email, setEmail] = useState('');
-    const [avatarUrl, setAvatarUrl] = useState('');
-    const [department, setDepartment] = useState('');
-    const [enrollmentNumber, setEnrollmentNumber] = useState('');
-    const [branch, setBranch] = useState('');
-    const [className, setClassName] = useState('');
-    const [createdAt, setCreatedAt] = useState<string>('');
-    const [lastLogin, setLastLogin] = useState<string>('');
+    // Local editable state
+    const [editedFullName, setEditedFullName] = useState('');
+    const [editedDepartment, setEditedDepartment] = useState('');
+
+    // Sync role with theme context
+    useEffect(() => {
+        if (role) {
+            setThemeRole(role as any);
+        }
+    }, [role, setThemeRole]);
 
     useEffect(() => {
         fetchProfile();
-    }, []);
+    }, [fetchProfile]);
 
-    const fetchProfile = async () => {
-        try {
-            setLoading(true);
-            const userId = session?.user?.id;
-            if (!userId) return;
+    useEffect(() => {
+        setEditedFullName(profile.fullName);
+        setEditedDepartment(profile.department || '');
+    }, [profile]);
 
-            const { data, error } = await supabase
-                .from('users')
-                .select(`
-                    *,
-                    students!students_user_id_fkey(*, org_classes(name)),
-                    teachers!teachers_id_fkey(*)
-                `)
-                .eq('id', userId)
-                .single();
-
-            if (error) throw error;
-
-            setFullName(data.full_name || '');
-            setEmail(data.email || '');
-            setAvatarUrl(data.avatar_url || '');
-            setCreatedAt(data.created_at ? new Date(data.created_at).toLocaleDateString() : '');
-            setLastLogin(data.last_login ? new Date(data.last_login).toLocaleDateString() : '');
-
-            if (role === 'student' && data.students) {
-                setEnrollmentNumber(data.students.enrollment_number || '');
-                setBranch(data.students.branch || '');
-                setClassName(data.students.org_classes?.name || '');
-            } else if (role === 'teacher' && data.teachers) {
-                setDepartment(data.teachers.department || '');
-            }
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-        } finally {
-            setLoading(false);
+    useEffect(() => {
+        if (editing) {
+            const changed = 
+                editedFullName !== profile.fullName ||
+                (role === 'teacher' && editedDepartment !== profile.department);
+            setHasUnsavedChanges(changed);
         }
-    };
+    }, [editing, editedFullName, editedDepartment, profile, role]);
 
-    const handleSave = async () => {
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchProfile();
+        setRefreshing(false);
+    }, [fetchProfile]);
+
+    const handleSave = useCallback(async () => {
         try {
             setSaving(true);
             const userId = session?.user?.id;
             if (!userId) return;
 
-            const updates: any = {
-                full_name: fullName,
+            const updates: Record<string, string> = {
+                full_name: editedFullName,
             };
 
             if (role === 'teacher') {
-                updates.department = department;
+                updates.department = editedDepartment;
             }
 
-            const { error } = await updateUserProfile(userId, updates);
+            const { error: updateError } = await updateUserProfile(userId, updates);
 
-            if (error) {
-                Alert.alert('Error', 'Error updating profile: ' + error);
+            if (updateError) {
+                Alert.alert('Error', 'Failed to update profile. Please try again.');
             } else {
+                // Optimistic update
+                setProfile(prev => ({
+                    ...prev,
+                    fullName: editedFullName,
+                    department: role === 'teacher' ? editedDepartment : prev.department,
+                }));
                 Alert.alert('Success', 'Profile updated successfully!');
                 setEditing(false);
-                fetchProfile();
+                setHasUnsavedChanges(false);
+                await fetchProfile(); // Sync with server
             }
-        } catch (error: any) {
-            Alert.alert('Error', error.message);
+        } catch (err) {
+            console.error('Error updating profile:', err);
+            Alert.alert('Error', 'An unexpected error occurred');
         } finally {
             setSaving(false);
         }
-    };
+    }, [session?.user?.id, editedFullName, editedDepartment, role, setProfile, fetchProfile]);
 
-    const handleImageSelected = async (uri: string) => {
+    const handleCancel = useCallback(() => {
+        if (hasUnsavedChanges) {
+            Alert.alert(
+                'Discard Changes?',
+                'You have unsaved changes. Are you sure you want to discard them?',
+                [
+                    { text: 'Keep Editing', style: 'cancel' },
+                    {
+                        text: 'Discard',
+                        style: 'destructive',
+                        onPress: () => {
+                            setEditing(false);
+                            setEditedFullName(profile.fullName);
+                            setEditedDepartment(profile.department || '');
+                            setHasUnsavedChanges(false);
+                        },
+                    },
+                ]
+            );
+        } else {
+            setEditing(false);
+        }
+    }, [hasUnsavedChanges, profile]);
+
+    const handleImageSelected = useCallback(async (uri: string) => {
         try {
             const userId = session?.user?.id;
             if (!userId) return;
 
             const url = await uploadProfilePicture(userId, uri);
             if (url) {
-                setAvatarUrl(url);
-                Alert.alert('Success', 'Profile picture updated successfully!');
+                setProfile(prev => ({ ...prev, avatarUrl: url }));
+                Alert.alert('Success', 'Profile picture updated!');
             } else {
                 Alert.alert('Error', 'Failed to upload profile picture');
             }
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            Alert.alert('Error', 'An error occurred while uploading');
+        } catch (err) {
+            console.error('Error uploading image:', err);
+            Alert.alert('Error', 'Upload failed. Please try again.');
         }
-    };
+    }, [session?.user?.id, setProfile]);
 
 
 
-    if (loading) {
+    if (loading && !refreshing) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: getBackgroundColor() }]}>
                 <LoadingSpinner size="large" />
@@ -131,40 +151,52 @@ export default function ProfileScreen(_props: Props) {
         );
     }
 
+    if (error && !profile.email) {
+        return (
+            <View style={[styles.loadingContainer, { backgroundColor: getBackgroundColor() }]}>
+                <Ionicons name="alert-circle-outline" size={48} color={tokens.colors.error.main} />
+                <Text style={[styles.errorText, { color: getTextColor() }]}>
+                    Failed to load profile
+                </Text>
+                <Button variant="primary" onPress={fetchProfile} style={{ marginTop: 16 }}>
+                    Retry
+                </Button>
+            </View>
+        );
+    }
+
+    // Use consistent header color based on role
     const roleColor = getRoleColor();
-    const headerColor = roleColor ? roleColor.main : tokens.colors.primary.main;
-    const contrastColor = roleColor ? roleColor.contrast : '#FFFFFF';
+    const headerColor = roleColor?.main || tokens.colors.primary.main;
 
     return (
-        <View style={[styles.mainContainer, { backgroundColor: getBackgroundColor() }]}>
+        <SafeAreaView style={[styles.mainContainer, { backgroundColor: headerColor }]}>
             <StatusBar
                 barStyle="light-content"
                 backgroundColor={headerColor}
-                translucent={false}
+                translucent={true}
             />
-            {/* Purple Header Section */}
-            <View style={[styles.header, { backgroundColor: headerColor }]}>
-                <View style={styles.avatarContainer}>
-                    <ImagePickerComponent
-                        currentImageUrl={avatarUrl}
-                        onImageSelected={handleImageSelected}
-                        size={100}
-                    />
-                </View>
-                <Text style={[styles.name, { color: contrastColor }]}>{fullName}</Text>
-                <Text style={[styles.roleText, { color: contrastColor + 'F2' }]}>{role?.toUpperCase()}</Text>
-                {editing && (
-                    <View style={[styles.editBadge, { backgroundColor: tokens.colors.warning.main }]}>
-                        <Text style={styles.editBadgeText}>EDITING</Text>
-                    </View>
-                )}
-            </View>
+            
+            <ProfileHeader
+                avatarUrl={profile.avatarUrl}
+                fullName={profile.fullName}
+                role={role}
+                editing={editing}
+                onImageSelected={handleImageSelected}
+                headerColor={headerColor}
+            />
 
-            {/* Scrollable Content */}
             <ScrollView
                 style={[styles.scrollContainer, { backgroundColor: getBackgroundColor() }]}
                 keyboardShouldPersistTaps="always"
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={headerColor}
+                    />
+                }
             >
                 {/* Personal Information Card */}
                 <View style={styles.section}>
@@ -174,18 +206,20 @@ export default function ProfileScreen(_props: Props) {
                         <View style={styles.inputSpacing}>
                             <Input
                                 label="Full Name"
-                                value={fullName}
-                                onChangeText={setFullName}
+                                value={editedFullName}
+                                onChangeText={setEditedFullName}
                                 disabled={!editing}
+                                accessibilityLabel="Full Name"
                             />
                         </View>
 
                         <View style={styles.inputSpacing}>
                             <Input
                                 label="Email"
-                                value={email}
+                                value={profile.email}
                                 onChangeText={() => { }}
                                 disabled={true}
+                                accessibilityLabel="Email (read-only)"
                             />
                         </View>
 
@@ -194,28 +228,31 @@ export default function ProfileScreen(_props: Props) {
                                 <View style={styles.inputSpacing}>
                                     <Input
                                         label="Enrollment Number"
-                                        value={enrollmentNumber}
+                                        value={profile.enrollmentNumber || ''}
                                         onChangeText={() => { }}
                                         disabled={true}
+                                        accessibilityLabel="Enrollment Number (read-only)"
                                     />
                                 </View>
-                                {branch && (
+                                {profile.branch && (
                                     <View style={styles.inputSpacing}>
                                         <Input
                                             label="Branch"
-                                            value={branch}
+                                            value={profile.branch}
                                             onChangeText={() => { }}
                                             disabled={true}
+                                            accessibilityLabel="Branch (read-only)"
                                         />
                                     </View>
                                 )}
-                                {className && (
+                                {profile.className && (
                                     <View style={styles.inputSpacing}>
                                         <Input
                                             label="Class"
-                                            value={className}
+                                            value={profile.className}
                                             onChangeText={() => { }}
                                             disabled={true}
+                                            accessibilityLabel="Class (read-only)"
                                         />
                                     </View>
                                 )}
@@ -226,9 +263,10 @@ export default function ProfileScreen(_props: Props) {
                             <View style={styles.inputSpacing}>
                                 <Input
                                     label="Department"
-                                    value={department}
-                                    onChangeText={setDepartment}
+                                    value={editedDepartment}
+                                    onChangeText={setEditedDepartment}
                                     disabled={!editing}
+                                    accessibilityLabel="Department"
                                 />
                             </View>
                         )}
@@ -256,10 +294,7 @@ export default function ProfileScreen(_props: Props) {
                                     </Button>
                                     <Button
                                         variant="secondary"
-                                        onPress={() => {
-                                            setEditing(false);
-                                            fetchProfile();
-                                        }}
+                                        onPress={handleCancel}
                                         disabled={saving}
                                         icon={<Ionicons name="close" size={18} color={getTextColor()} />}
                                     >
@@ -276,82 +311,89 @@ export default function ProfileScreen(_props: Props) {
                     <View style={[styles.card, { backgroundColor: getSurfaceColor() }]}>
                         <Text style={[styles.sectionTitle, { color: getTextColor() }]}>Account Information</Text>
                         
-                        {createdAt && (
-                            <View style={styles.infoRow}>
-                                <Ionicons name="calendar-outline" size={20} color={getTextSecondaryColor()} />
-                                <View style={styles.infoTextContainer}>
-                                    <Text style={[styles.infoLabel, { color: getTextSecondaryColor() }]}>Joined</Text>
-                                    <Text style={[styles.infoValue, { color: getTextColor() }]}>{createdAt}</Text>
-                                </View>
-                            </View>
+                        {profile.createdAt && (
+                            <InfoRow
+                                icon="calendar-outline"
+                                label="Joined"
+                                value={profile.createdAt}
+                                iconColor={getTextSecondaryColor()}
+                                labelColor={getTextSecondaryColor()}
+                                valueColor={getTextColor()}
+                            />
                         )}
                         
-                        {lastLogin && (
-                            <View style={styles.infoRow}>
-                                <Ionicons name="time-outline" size={20} color={getTextSecondaryColor()} />
-                                <View style={styles.infoTextContainer}>
-                                    <Text style={[styles.infoLabel, { color: getTextSecondaryColor() }]}>Last Login</Text>
-                                    <Text style={[styles.infoValue, { color: getTextColor() }]}>{lastLogin}</Text>
-                                </View>
-                            </View>
+                        {profile.lastLogin && (
+                            <InfoRow
+                                icon="time-outline"
+                                label="Last Login"
+                                value={profile.lastLogin}
+                                iconColor={getTextSecondaryColor()}
+                                labelColor={getTextSecondaryColor()}
+                                valueColor={getTextColor()}
+                            />
                         )}
 
-                        <View style={styles.infoRow}>
-                            <Ionicons name="shield-checkmark-outline" size={20} color={getTextSecondaryColor()} />
-                            <View style={styles.infoTextContainer}>
-                                <Text style={[styles.infoLabel, { color: getTextSecondaryColor() }]}>Account Status</Text>
-                                <Text style={[styles.infoValue, { color: tokens.colors.success.main }]}>Active</Text>
-                            </View>
-                        </View>
+                        <InfoRow
+                            icon="shield-checkmark-outline"
+                            label="Account Status"
+                            value="Active"
+                            iconColor={getTextSecondaryColor()}
+                            labelColor={getTextSecondaryColor()}
+                            valueColor={tokens.colors.success.main}
+                        />
                     </View>
                 </View>
 
                 {/* Additional Information Section */}
                 <View style={styles.section}>
-                    <View style={[styles.card, { backgroundColor: getSurfaceColor() }] }>
+                    <View style={[styles.card, { backgroundColor: getSurfaceColor() }]}>
                         <Text style={[styles.sectionTitle, { color: getTextColor() }]}>Additional Information</Text>
                         
-                        <View style={styles.infoRow}>
-                            <Ionicons name="school-outline" size={20} color={getTextSecondaryColor()} />
-                            <View style={styles.infoTextContainer}>
-                                <Text style={[styles.infoLabel, { color: getTextSecondaryColor() }]}>Role</Text>
-                                <Text style={[styles.infoValue, { color: getTextColor() }]}>{role ? role.charAt(0).toUpperCase() + role.slice(1) : 'N/A'}</Text>
-                            </View>
-                        </View>
+                        <InfoRow
+                            icon="school-outline"
+                            label="Role"
+                            value={role ? role.charAt(0).toUpperCase() + role.slice(1) : 'N/A'}
+                            iconColor={getTextSecondaryColor()}
+                            labelColor={getTextSecondaryColor()}
+                            valueColor={getTextColor()}
+                        />
                         
-                        {role === 'student' && className && (
-                            <View style={styles.infoRow}>
-                                <Ionicons name="book-outline" size={20} color={getTextSecondaryColor()} />
-                                <View style={styles.infoTextContainer}>
-                                    <Text style={[styles.infoLabel, { color: getTextSecondaryColor() }]}>Class</Text>
-                                    <Text style={[styles.infoValue, { color: getTextColor() }]}>{className}</Text>
-                                </View>
-                            </View>
+                        {role === 'student' && profile.className && (
+                            <InfoRow
+                                icon="book-outline"
+                                label="Class"
+                                value={profile.className}
+                                iconColor={getTextSecondaryColor()}
+                                labelColor={getTextSecondaryColor()}
+                                valueColor={getTextColor()}
+                            />
                         )}
                         
-                        {role === 'student' && enrollmentNumber && (
-                            <View style={styles.infoRow}>
-                                <Ionicons name="reader-outline" size={20} color={getTextSecondaryColor()} />
-                                <View style={styles.infoTextContainer}>
-                                    <Text style={[styles.infoLabel, { color: getTextSecondaryColor() }]}>Enrollment Number</Text>
-                                    <Text style={[styles.infoValue, { color: getTextColor() }]}>{enrollmentNumber}</Text>
-                                </View>
-                            </View>
+                        {role === 'student' && profile.enrollmentNumber && (
+                            <InfoRow
+                                icon="reader-outline"
+                                label="Enrollment Number"
+                                value={profile.enrollmentNumber}
+                                iconColor={getTextSecondaryColor()}
+                                labelColor={getTextSecondaryColor()}
+                                valueColor={getTextColor()}
+                            />
                         )}
                         
-                        {role === 'teacher' && department && (
-                            <View style={styles.infoRow}>
-                                <Ionicons name="briefcase-outline" size={20} color={getTextSecondaryColor()} />
-                                <View style={styles.infoTextContainer}>
-                                    <Text style={[styles.infoLabel, { color: getTextSecondaryColor() }]}>Department</Text>
-                                    <Text style={[styles.infoValue, { color: getTextColor() }]}>{department}</Text>
-                                </View>
-                            </View>
+                        {role === 'teacher' && profile.department && (
+                            <InfoRow
+                                icon="briefcase-outline"
+                                label="Department"
+                                value={profile.department}
+                                iconColor={getTextSecondaryColor()}
+                                labelColor={getTextSecondaryColor()}
+                                valueColor={getTextColor()}
+                            />
                         )}
                     </View>
                 </View>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -367,61 +409,10 @@ const styles = StyleSheet.create({
     scrollContainer: {
         flex: 1,
     },
-    header: {
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 60 : 20,
-        paddingBottom: 20,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
-        elevation: 5,
-    },
-    avatarContainer: {
-        marginBottom: 10,
-        elevation: 8,
-        borderRadius: 50,
-    },
-    editBadge: {
-        marginTop: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    editBadgeText: {
-        color: '#FFFFFF',
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-    },
-    infoTextContainer: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    infoLabel: {
-        fontSize: 12,
-        marginBottom: 2,
-    },
-    infoValue: {
+    errorText: {
         fontSize: 16,
-        fontWeight: '600',
-    },
-    name: {
-        fontSize: 22,
-        fontWeight: '700',
-        marginBottom: 4,
+        marginTop: 12,
         textAlign: 'center',
-    },
-    roleText: {
-        fontSize: 12,
-        fontWeight: '600',
-        letterSpacing: 1,
     },
     section: {
         paddingHorizontal: 20,

@@ -265,6 +265,7 @@ export async function markAttendance(
 }
 
 // Fetch assignments created by a teacher
+// Fetch assignments created by a teacher
 export async function fetchTeacherAssignments(teacherId: string) {
     try {
         const { data: subjects } = await supabase
@@ -280,7 +281,7 @@ export async function fetchTeacherAssignments(teacherId: string) {
             .from('assignments')
             .select(`
                 *,
-                subjects (name, classes(name))
+                subjects (name, classes(name, academic_year))
             `)
             .in('subject_id', subjectIds)
             .order('created_at', { ascending: false });
@@ -648,5 +649,119 @@ export async function fetchStudentPendingAssignments(studentId: string) {
     } catch (error: any) {
         console.error('Error fetching pending assignments:', error);
         return { data: 0, error: getErrorMessage(error) };
+    }
+}
+
+// Fetch student's metadata (class, branch, academic year)
+export async function fetchStudentMetadata(studentId: string) {
+    try {
+        const { data, error } = await supabase
+            .from('students')
+            .select(`
+                class_id,
+                branch,
+                class_level,
+                classes!inner (
+                    id,
+                    name,
+                    academic_year
+                )
+            `)
+            .eq('id', studentId)
+            .single();
+
+        if (error) throw error;
+
+        const classData = Array.isArray(data?.classes) ? data?.classes[0] : data?.classes;
+
+        return {
+            data: {
+                classId: data?.class_id,
+                className: classData?.name,
+                branch: data?.branch,
+                classLevel: data?.class_level,
+                academicYear: classData?.academic_year,
+            },
+            error: null
+        };
+    } catch (error: any) {
+        console.error('Error fetching student metadata:', error);
+        return { data: null, error: getErrorMessage(error) };
+    }
+}
+
+// Fetch teacher's metadata (department)
+export async function fetchTeacherMetadata(teacherId: string) {
+    try {
+        const { data, error } = await supabase
+            .from('teachers')
+            .select('department')
+            .eq('id', teacherId)
+            .single();
+
+        if (error) throw error;
+
+        return {
+            data: {
+                department: data?.department,
+            },
+            error: null
+        };
+    } catch (error: any) {
+        console.error('Error fetching teacher metadata:', error);
+        return { data: null, error: getErrorMessage(error) };
+    }
+}
+
+// Fetch class details by ID
+export async function fetchClassDetails(classId: string) {
+    try {
+        const { data, error } = await supabase
+            .from('classes')
+            .select('id, name, academic_year, value, display_order')
+            .eq('id', classId)
+            .single();
+
+        if (error) throw error;
+
+        return {
+            data: {
+                id: data?.id,
+                name: data?.name,
+                academicYear: data?.academic_year,
+                value: data?.value,
+                displayOrder: data?.display_order,
+            },
+            error: null
+        };
+    } catch (error: any) {
+        console.error('Error fetching class details:', error);
+        return { data: null, error: getErrorMessage(error) };
+    }
+}
+
+// Fetch branch details by ID
+export async function fetchBranchDetails(branchId: string) {
+    try {
+        const { data, error } = await supabase
+            .from('branches')
+            .select('id, name, code, class_id')
+            .eq('id', branchId)
+            .single();
+
+        if (error) throw error;
+
+        return {
+            data: {
+                id: data?.id,
+                name: data?.name,
+                code: data?.code,
+                classId: data?.class_id,
+            },
+            error: null
+        };
+    } catch (error: any) {
+        console.error('Error fetching branch details:', error);
+        return { data: null, error: getErrorMessage(error) };
     }
 }

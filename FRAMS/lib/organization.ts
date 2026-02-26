@@ -1,20 +1,3 @@
-/**
- * Organization Service Module
- * 
- * Provides CRUD operations for organizational data structures including
- * classes, branches, and departments. Handles validation, error mapping,
- * and dependency checking.
- * 
- * Features:
- * - Type-safe operations with TypeScript
- * - Input validation before database operations
- * - User-friendly error messages
- * - Dependency checking before deletion
- * - Support for active/inactive items
- * 
- * Requirements: 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9
- */
-
 import { supabase } from './supabase';
 
 /**
@@ -117,6 +100,8 @@ export async function getClasses(
   includeInactive: boolean = false
 ): Promise<{ data: ClassItem[] | null; error: string | null }> {
   try {
+    console.log('🔍 getClasses called with includeInactive:', includeInactive);
+    
     let query = supabase
       .from('classes')          // consolidated schema: org_classes → classes
       .select('id, name, value, display_order, is_active, academic_year, created_at, updated_at')
@@ -128,7 +113,18 @@ export async function getClasses(
 
     const { data, error } = await query;
 
-    if (error) throw error;
+    console.log('📊 getClasses - Raw response:', { data, error });
+
+    if (error) {
+      console.error('❌ Supabase error in getClasses:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
+
     // Transform the data to match the ClassItem interface
     const transformedData = data?.map(item => ({
       id: item.id,
@@ -141,9 +137,10 @@ export async function getClasses(
       updated_at: item.updated_at,
     })) || [];
 
+    console.log('✅ getClasses - Returning:', transformedData);
     return { data: transformedData, error: null };
   } catch (error: any) {
-    console.error('Error fetching classes:', error);
+    console.error('❌ Exception in getClasses:', error);
     return { data: null, error: getOrgErrorMessage(error) };
   }
 }
@@ -311,6 +308,8 @@ export async function getBranches(
   includeInactive: boolean = false
 ): Promise<{ data: BranchItem[] | null; error: string | null }> {
   try {
+    console.log('🔍 getBranches called with classId:', classId, 'includeInactive:', includeInactive);
+    
     let query = supabase
       .from('branches')         // consolidated schema: org_branches → branches
       .select('*')
@@ -326,10 +325,23 @@ export async function getBranches(
 
     const { data, error } = await query;
 
-    if (error) throw error;
-    return { data: data || [], error: null };
+    console.log('📊 getBranches - Raw response:', { data, error });
+
+    if (error) {
+      console.error('❌ Supabase error in getBranches:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
+
+    const result = data || [];
+    console.log('✅ getBranches - Returning:', result);
+    return { data: result, error: null };
   } catch (error: any) {
-    console.error('Error fetching branches:', error);
+    console.error('❌ Exception in getBranches:', error);
     return { data: null, error: getOrgErrorMessage(error) };
   }
 }
@@ -479,6 +491,8 @@ export async function getDepartments(
   includeInactive: boolean = false
 ): Promise<{ data: DepartmentItem[] | null; error: string | null }> {
   try {
+    console.log('🔍 getDepartments called with includeInactive:', includeInactive);
+    
     let query = supabase
       .from('org_departments')
       .select('*')
@@ -490,10 +504,23 @@ export async function getDepartments(
 
     const { data, error } = await query;
 
-    if (error) throw error;
-    return { data: data || [], error: null };
+    console.log('📊 getDepartments - Raw response:', { data, error });
+
+    if (error) {
+      console.error('❌ Supabase error in getDepartments:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
+
+    const result = data || [];
+    console.log('✅ getDepartments - Returning:', result);
+    return { data: result, error: null };
   } catch (error: any) {
-    console.error('Error fetching departments:', error);
+    console.error('❌ Exception in getDepartments:', error);
     return { data: null, error: getOrgErrorMessage(error) };
   }
 }

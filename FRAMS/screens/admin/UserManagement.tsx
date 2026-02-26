@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet, Alert, FlatList, ScrollView, TouchableOpacity, Modal, Text, StatusBar, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { SegmentedButtons } from 'react-native-paper';
 import { supabase } from '../../lib/supabase';
 import { verifyUser, unverifyUser, updateUserRole, deleteUser } from '../../lib/admin';
@@ -511,7 +512,7 @@ export default function UserManagement() {
         },
         header: {
             paddingHorizontal: 26,
-            paddingTop: 60,
+            paddingTop: 20,
             paddingBottom: 33,
             borderBottomLeftRadius: 24,
             borderBottomRightRadius: 24,
@@ -889,11 +890,11 @@ export default function UserManagement() {
     };
 
     return (
-        <View style={[styles.mainContainer, { backgroundColor: getBackgroundColor() }]}>
+        <SafeAreaView style={[styles.mainContainer, { backgroundColor: tokens.colors.roles.admin.main }]}>
             <StatusBar
                 barStyle="light-content"
                 backgroundColor={tokens.colors.roles.admin.main}
-                translucent={false}
+                translucent={true}
             />
             {/* Purple Header Section */}
             <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>
@@ -1280,6 +1281,6 @@ export default function UserManagement() {
                     }}
                 />
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }

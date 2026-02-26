@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, FlatList, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
@@ -149,7 +149,7 @@ function SelectPicker<T = string>({
       justifyContent: 'space-between',
       backgroundColor: disabled ? getInputDisabledColor() : getInputColor(),
       borderRadius: 14,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: error ? tokens.colors.error.main : getBorderColor(),
       paddingHorizontal: 16,
       paddingVertical: 14,
@@ -162,8 +162,9 @@ function SelectPicker<T = string>({
     },
     pickerButtonFocused: {
       borderColor: tokens.colors.primary.main,
-      shadowOpacity: 0.1,
-      elevation: 2,
+      borderWidth: 2,
+      shadowOpacity: 0.15,
+      elevation: 3,
     },
     pickerButtonDisabled: {
       opacity: 0.6,
@@ -203,7 +204,7 @@ function SelectPicker<T = string>({
     modalContent: {
       width: '90%',
       maxWidth: 400,
-      maxHeight: '80%',
+      maxHeight: Math.min(Dimensions.get('window').height * 0.75, Dimensions.get('window').height - 100),
       backgroundColor: getSurfaceColor(),
       borderRadius: 16,
       padding: 16,
@@ -250,71 +251,81 @@ function SelectPicker<T = string>({
       backgroundColor: getSurfaceColor(),
     },
     listContainer: {
-      height: 300,
+      maxHeight: Math.min(Dimensions.get('window').height * 0.5, 400),
+      paddingBottom: 16,
     },
     listItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      borderRadius: 10,
-      marginBottom: 4,
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: 'transparent',
-      minHeight: 60,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      borderRadius: 12,
+      marginBottom: 6,
+      backgroundColor: mode === 'dark' ? tokens.colors.neutral.gray900 : tokens.colors.neutral.gray50,
+      borderWidth: 1.5,
+      borderColor: getBorderColor(),
+      minHeight: 64,
     },
     listItemSelected: {
       backgroundColor: tokens.colors.primary.main,
       borderColor: tokens.colors.primary.main,
       shadowColor: tokens.colors.primary.main,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 3,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 5,
     },
     listItemDisabled: {
       opacity: 0.4,
     },
     listItemIcon: {
-      marginRight: 10,
-      width: 20,
+      marginRight: 12,
+      width: 24,
+      height: 24,
       alignItems: 'center',
       justifyContent: 'center',
+      borderRadius: 8,
+      backgroundColor: mode === 'dark' ? tokens.colors.neutral.gray800 : tokens.colors.neutral.gray100,
     },
     listItemContent: {
       flex: 1,
       paddingRight: 8,
     },
     listItemText: {
-      fontSize: 15,
+      fontSize: 16,
       color: getTextColor(),
-      fontWeight: '500',
-      marginBottom: 2,
+      fontWeight: '600',
+      marginBottom: 3,
+      letterSpacing: 0.3,
     },
     listItemTextSelected: {
       fontWeight: '700',
       color: '#FFFFFF',
-      fontSize: 15,
+      fontSize: 16,
+      letterSpacing: 0.3,
     },
     listItemDescription: {
-      fontSize: 12,
+      fontSize: 13,
       color: getTextSecondaryColor(),
-      opacity: 0.8,
-      lineHeight: 16,
+      opacity: 0.75,
+      lineHeight: 18,
+      fontWeight: '400',
     },
     listItemDescriptionSelected: {
-      fontSize: 12,
+      fontSize: 13,
       color: '#FFFFFF',
-      opacity: 0.9,
+      opacity: 0.95,
       fontWeight: '400',
-      lineHeight: 16,
+      lineHeight: 18,
     },
     checkIcon: {
-      marginLeft: 8,
-      width: 24,
+      marginLeft: 10,
+      width: 28,
+      height: 28,
       alignItems: 'center',
       justifyContent: 'center',
+      borderRadius: 14,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     emptyState: {
       padding: 40,
@@ -448,6 +459,7 @@ function SelectPicker<T = string>({
                     data={filteredItems}
                     keyExtractor={(item, index) => `${item.value}-${index}`}
                     showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 8 }}
                     renderItem={({ item }) => {
                     const isSelected = item.value === value;
                     return (

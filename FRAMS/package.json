@@ -6,7 +6,11 @@
     "start": "expo start",
     "android": "expo start --android",
     "web": "expo start --web",
-    "migrate:org-data": "node scripts/migrate-organizational-data.js"
+    "migrate:org-data": "node scripts/migrate-organizational-data.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:audit": "jest audit-system"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -44,8 +48,12 @@
   },
   "devDependencies": {
     "@expo/config-types": "^54.0.10",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.10",
     "babel-preset-expo": "~54.0.10",
+    "fast-check": "^4.5.3",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
     "typescript": "~5.9.2"
   },
   "private": true
