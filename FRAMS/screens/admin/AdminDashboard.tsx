@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, StatusBar, RefreshControl, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, RefreshControl, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../lib/design-system/ThemeContext';
@@ -7,8 +7,6 @@ import LoadingSpinner from '../../components/design-system/feedback/LoadingSpinn
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../components/admin/AdminLayout';
-import StatWidget from '../../components/admin/StatWidget';
-import DataTable from '../../components/admin/DataTable';
 
 export default function AdminDashboard() {
     const navigation = useNavigation();
@@ -213,6 +211,7 @@ export default function AdminDashboard() {
                 onLogout={handleLogout}
                 userName={adminName}
                 userEmail={session?.user?.email || ''}
+                statusBarColor={tokens.colors.roles.admin.main}
             >
                 <View style={[styles.loadingContainer, { backgroundColor: getBackgroundColor() }]}>
                     <LoadingSpinner size="large" />
@@ -222,8 +221,14 @@ export default function AdminDashboard() {
     }
 
     return (
-        <View style={[styles.mainContainer, { backgroundColor: getBackgroundColor() }]}>
-            <StatusBar barStyle="light-content" backgroundColor={tokens.colors.roles.admin.main} />
+        <AdminLayout
+            activeMenuItem="dashboard"
+            onMenuItemPress={handleMenuItemPress}
+            onLogout={handleLogout}
+            userName={adminName}
+            userEmail={session?.user?.email || ''}
+            statusBarColor={tokens.colors.roles.admin.main}
+        >
             {/* Purple Header Section */}
             <View style={[styles.welcomeSection, { backgroundColor: tokens.colors.roles.admin.main }]}>
                 <View style={styles.headerRow}>
@@ -467,7 +472,7 @@ export default function AdminDashboard() {
                     </View>
                 )}
             </ScrollView>
-        </View>
+        </AdminLayout>
     );
 }
 
@@ -485,8 +490,8 @@ const styles = StyleSheet.create({
     },
     welcomeSection: {
         paddingHorizontal: 24,
-        paddingTop: 48,
-        paddingBottom: 32,
+        paddingTop: 16,
+        paddingBottom: 24,
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
         elevation: 5,

@@ -461,9 +461,14 @@ DROP POLICY IF EXISTS "Admins can view all branches"   ON public.branches;
 DROP POLICY IF EXISTS "Admins can insert branches"     ON public.branches;
 DROP POLICY IF EXISTS "Admins can update branches"     ON public.branches;
 DROP POLICY IF EXISTS "Admins can delete branches"     ON public.branches;
+DROP POLICY IF EXISTS "Authenticated Read Branches" ON public.branches;
+DROP POLICY IF EXISTS "Public Read Branches" ON public.branches;
 
-CREATE POLICY "Authenticated Read Branches" ON public.branches
-    FOR SELECT USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Authenticated Read Branches" ON public.branches;
+CREATE POLICY "Branches Public Read"
+ON public.branches
+FOR SELECT
+USING (true);
 
 CREATE POLICY "Admin All Branches" ON public.branches
     FOR ALL USING (public.is_admin());
@@ -562,11 +567,23 @@ BEGIN
 END $$;
 
 -- Step 10b: Drop broken RLS policies on devices before dropping table
-DROP POLICY IF EXISTS "Admins can manage devices"    ON public.devices;
-DROP POLICY IF EXISTS "Admin Manage Devices"         ON public.devices;
-DROP POLICY IF EXISTS "Devices can be viewed by admins" ON public.devices;
+--            Guarded: DROP POLICY requires the table to exist even with IF EXISTS.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema='public' AND table_name='devices'
+    ) THEN
+        DROP POLICY IF EXISTS "Admins can manage devices"        ON public.devices;
+        DROP POLICY IF EXISTS "Admin Manage Devices"             ON public.devices;
+        DROP POLICY IF EXISTS "Devices can be viewed by admins" ON public.devices;
+        RAISE NOTICE 'Dropped RLS policies on devices table.';
+    ELSE
+        RAISE NOTICE 'devices table does not exist – skipping policy drops.';
+    END IF;
+END $$;
 
--- Step 10c: Drop devices indexes
+-- Step 10c: Drop devices indexes (IF EXISTS is safe for indexes even without the table)
 DROP INDEX IF EXISTS public.idx_devices_is_active;
 DROP INDEX IF EXISTS public.idx_devices_device_id;
 
@@ -711,9 +728,14 @@ CREATE POLICY "Teachers Self Update"          ON public.teachers
 ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Classes Admin Full"    ON public.classes;
 DROP POLICY IF EXISTS "Classes Authenticated Read" ON public.classes;
+DROP POLICY IF EXISTS "Classes Public Read" ON public.classes;
 
-CREATE POLICY "Classes Authenticated Read"    ON public.classes
-    FOR SELECT USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Classes Authenticated Read" ON public.classes;
+CREATE POLICY "Classes Public Read"
+ON public.classes
+FOR SELECT
+USING (true);
+
 CREATE POLICY "Classes Admin Full"            ON public.classes
     FOR ALL    USING (public.is_admin());
 
@@ -793,10 +815,16 @@ DROP POLICY IF EXISTS "Admins can view all departments"   ON public.org_departme
 DROP POLICY IF EXISTS "Admins can insert departments"     ON public.org_departments;
 DROP POLICY IF EXISTS "Admins can update departments"     ON public.org_departments;
 DROP POLICY IF EXISTS "Admins can delete departments"     ON public.org_departments;
+DROP POLICY IF EXISTS "Org Departments Authenticated Read" ON public.org_departments;
+DROP POLICY IF EXISTS "Org Departments Public Read" ON public.org_departments;
 
-CREATE POLICY "Org Departments Authenticated Read" ON public.org_departments
-    FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Org Departments Admin Full"         ON public.org_departments
+DROP POLICY IF EXISTS "Org Departments Authenticated Read" ON public.org_departments;
+CREATE POLICY "Org Departments Public Read"
+ON public.org_departments
+FOR SELECT
+USING (true);
+
+CREATE POLICY "Org Departments Admin Full"    ON public.org_departments
     FOR ALL    USING (public.is_admin());
 
 -- ============================================================

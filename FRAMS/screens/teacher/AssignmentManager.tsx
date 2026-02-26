@@ -470,7 +470,7 @@ export default function AssignmentManager() {
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.assignmentTitle}>{item.title}</Text>
                                     <Text style={styles.assignmentSubtext}>
-                                        {item.subjects?.name} ({item.subjects?.org_classes?.name})
+                                        {item.subjects?.name} ({item.subjects?.classes?.name})
                                     </Text>
                                     <Text style={[styles.assignmentSubtext, { marginTop: tokens.spacing.xs }]}>
                                         Due: {new Date(item.due_date).toLocaleDateString()}
@@ -535,7 +535,7 @@ export default function AssignmentManager() {
                             items={subjects.map(subject => ({
                                 label: subject.name,
                                 value: subject.id,
-                                description: subject.org_classes?.name,
+                                description: subject.classes?.name,
                                 icon: 'book-outline' as const
                             }))}
                             placeholder="Choose a subject"

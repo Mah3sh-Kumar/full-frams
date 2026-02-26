@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions, Text, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../lib/design-system/ThemeContext';
@@ -233,7 +234,7 @@ export default function ReportsScreen() {
         },
         header: { 
             paddingHorizontal: 26,
-            paddingTop: 60,
+            paddingTop: 20,
             paddingBottom: 33,
             borderBottomLeftRadius: 24,
             borderBottomRightRadius: 24,
@@ -345,15 +346,14 @@ export default function ReportsScreen() {
     );
 
     return (
-        <>
+        <SafeAreaView style={[styles.mainContainer, { backgroundColor: tokens.colors.roles.admin.main }]}>
             <StatusBar 
                 barStyle="light-content" 
                 backgroundColor={tokens.colors.roles.admin.main} 
-                translucent={false}
+                translucent={true}
             />
-            <View style={[styles.mainContainer, { backgroundColor: tokens.colors.roles.admin.main }]}>
-                {/* Purple Header Section */}
-                <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>
+            {/* Purple Header Section */}
+            <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>
                     <View style={styles.headerRow}>
                         <View style={styles.headerContent}>
                             <Text style={styles.title}>Institution Reports</Text>
@@ -533,8 +533,7 @@ export default function ReportsScreen() {
                     </View>
                 </View>
             </ScrollView>
-            </View>
-        </>
+        </SafeAreaView>
     );
 }
 

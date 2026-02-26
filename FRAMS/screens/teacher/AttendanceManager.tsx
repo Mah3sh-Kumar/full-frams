@@ -540,7 +540,7 @@ export default function AttendanceManager() {
                         items={subjects.map(subject => ({
                             label: subject.name,
                             value: subject.id,
-                            description: subject.org_classes?.name,
+                            description: subject.classes?.name,
                             icon: 'book-outline' as const
                         }))}
                         placeholder="Choose a subject"

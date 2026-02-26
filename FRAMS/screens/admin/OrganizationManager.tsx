@@ -27,6 +27,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Modal, Alert, FlatList, StatusBar, Platform, KeyboardAvoidingView, ScrollView, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import KeyboardAwareScrollView from '../../components/KeyboardAwareScrollView';
 import { useTheme } from '../../lib/design-system/ThemeContext';
 import LoadingSpinner from '../../components/design-system/feedback/LoadingSpinner';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -636,8 +638,8 @@ export default function OrganizationManager() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
-      <StatusBar barStyle="light-content" backgroundColor={tokens.colors.roles.admin.main} />
+    <SafeAreaView style={[styles.container, { backgroundColor: tokens.colors.roles.admin.main }]}>
+      <StatusBar barStyle="light-content" backgroundColor={tokens.colors.roles.admin.main} translucent={true} />
 
       {/* Enhanced Header Section */}
       <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>        
@@ -675,7 +677,9 @@ export default function OrganizationManager() {
         </View>
       </View>
 
-      <View style={styles.tabContainer}>
+      {/* Content Area with Background */}
+      <View style={{ flex: 1, backgroundColor: getBackgroundColor() }}>
+        <View style={styles.tabContainer}>
         <View style={styles.customTabs}>
           {[
             { value: 'classes' as TabType, label: 'Classes', icon: 'school-outline' },
@@ -794,14 +798,17 @@ export default function OrganizationManager() {
                 </View>
               </View>
               
-              <ScrollView
+              <KeyboardAwareScrollView
                 contentContainerStyle={styles.formContainer}
                 keyboardShouldPersistTaps="handled"
+                enableOnAndroid={true}
+                scrollEnabled={true}
+                extraScrollHeight={120}
                 showsVerticalScrollIndicator={false}
                 bounces={false}
               >
                 {renderForm()}
-              </ScrollView>
+              </KeyboardAwareScrollView>
             </View>
           </KeyboardAvoidingView>
         </View>
@@ -816,6 +823,7 @@ export default function OrganizationManager() {
         onCancel={() => setDeleteConfirmVisible(false)}
         destructive
       />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }

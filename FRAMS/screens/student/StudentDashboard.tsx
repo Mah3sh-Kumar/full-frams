@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, Text, TouchableOpacity, StatusBar, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { fetchStudentAttendanceStats, fetchStudentPendingAssignments } from '../../lib/database';
@@ -8,6 +9,7 @@ import LoadingSpinner from '../../components/design-system/feedback/LoadingSpinn
 import ProgressRing from '../../components/design-system/analytics/ProgressRing';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
+import { fetchStudentMetadata } from '../../lib/database';
 
 export default function StudentDashboard() {
     const navigation = useNavigation();
@@ -24,10 +26,17 @@ export default function StudentDashboard() {
     const [studentName, setStudentName] = useState<string>('Student');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [metadata, setMetadata] = useState({
+        className: '',
+        branch: '',
+        academicYear: '',
+        classLevel: '',
+    });
 
     useEffect(() => {
         loadStats();
         loadStudentName();
+        loadStudentMetadata();
         loadUpcomingEvents();
     }, []);
 
@@ -40,7 +49,7 @@ export default function StudentDashboard() {
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        await Promise.all([loadStats(), loadStudentName(), loadUpcomingEvents()]);
+        await Promise.all([loadStats(), loadStudentName(), loadStudentMetadata(), loadUpcomingEvents()]);
         setRefreshing(false);
     }, []);
 
@@ -60,6 +69,24 @@ export default function StudentDashboard() {
             }
         } catch (err) {
             console.error('Error loading student name:', err);
+        }
+    };
+
+    const loadStudentMetadata = async () => {
+        if (!session?.user?.id) return;
+
+        try {
+            const { data: metadataRes } = await fetchStudentMetadata(session.user.id);
+            if (metadataRes) {
+                setMetadata({
+                    className: metadataRes.className || 'Not assigned',
+                    branch: metadataRes.branch || 'Not assigned',
+                    academicYear: metadataRes.academicYear || 'Not assigned',
+                    classLevel: metadataRes.classLevel || 'Not assigned',
+                });
+            }
+        } catch (err) {
+            console.error('Error loading student metadata:', err);
         }
     };
 
@@ -201,14 +228,31 @@ export default function StudentDashboard() {
     }
 
     return (
-        <View style={[styles.mainContainer, { backgroundColor: getBackgroundColor() }]}>
-            <StatusBar barStyle="light-content" backgroundColor={tokens.colors.roles.student.main} />
+        <SafeAreaView style={[styles.mainContainer, { backgroundColor: tokens.colors.roles.student.main }]}>
+            <StatusBar barStyle="light-content" backgroundColor={tokens.colors.roles.student.main} translucent={true} />
             {/* Blue Header Section */}
             <View style={[styles.welcomeSection, { backgroundColor: tokens.colors.roles.student.main }]}>
                 <View style={styles.headerRow}>
                     <View style={styles.welcomeContent}>
                         <Text style={styles.welcomeTitle}>{getGreeting()}, {studentName}!</Text>
                         <Text style={styles.welcomeSubtitle}>Here's your summary for the week.</Text>
+                        {metadata.className && (
+                            <View style={{ marginTop: 12, gap: 4 }}>
+                                <Text style={[styles.welcomeSubtitle, { opacity: 0.9, fontSize: 13 }]}>
+                                    Class: {metadata.className}
+                                </Text>
+                                {metadata.branch && (
+                                    <Text style={[styles.welcomeSubtitle, { opacity: 0.9, fontSize: 13 }]}>
+                                        Branch: {metadata.branch}
+                                    </Text>
+                                )}
+                                {metadata.academicYear && (
+                                    <Text style={[styles.welcomeSubtitle, { opacity: 0.9, fontSize: 13 }]}>
+                                        Year: {metadata.academicYear}
+                                    </Text>
+                                )}
+                            </View>
+                        )}
                     </View>
                     <View style={styles.quickActions}>
                         <TouchableOpacity
@@ -340,7 +384,7 @@ export default function StudentDashboard() {
                 {/* Upcoming Events Section */}
                 {upcomingEventsDisplay}
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -358,7 +402,7 @@ const styles = StyleSheet.create({
     },
     welcomeSection: {
         paddingHorizontal: 24,
-        paddingTop: 48,
+        paddingTop: 20,
         paddingBottom: 32,
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,

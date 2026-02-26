@@ -74,6 +74,9 @@ export default function SignUpScreen({ navigation }: Props) {
                 getDepartments(),
             ]);
 
+            console.log('📊 Classes fetched:', classesResult.data);
+            console.log('📊 Departments fetched:', departmentsResult.data);
+
             if (classesResult.error) {
                 throw new Error(classesResult.error);
             }
@@ -89,7 +92,10 @@ export default function SignUpScreen({ navigation }: Props) {
                 setClassLevel(classesResult.data[0].value);
             }
             if (departmentsResult.data && Array.isArray(departmentsResult.data) && departmentsResult.data.length > 0) {
+                console.log('✅ Setting default department to:', departmentsResult.data[0].name);
                 setDepartment(departmentsResult.data[0].name);
+            } else {
+                console.warn('⚠️ No departments found in database');
             }
         } catch (error: any) {
             console.error('Error fetching organizational data:', error);
