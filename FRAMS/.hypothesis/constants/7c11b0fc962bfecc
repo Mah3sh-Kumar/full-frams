@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\postgrest\__init__.py
-# hypothesis_version: 6.148.7
-
-['APIError', 'APIResponse', 'AsyncPostgrestClient', 'AsyncRequestBuilder', 'CountMethod', 'Filters', 'RequestMethod', 'ReturnMethod', 'SyncPostgrestClient', 'SyncRequestBuilder', 'Timeout', '__version__']

@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\supabase_functions\__init__.py
-# hypothesis_version: 6.148.7
-
-['AsyncFunctionsClient', 'FunctionRegion', 'SyncFunctionsClient', 'create_client']

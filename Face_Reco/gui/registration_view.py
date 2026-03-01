@@ -431,8 +431,6 @@ class RegistrationWidget(QWidget):
                 full_name=name,
                 enrollment_number=enrollment,
                 class_id=class_id,
-                class_level=class_name,
-                branch=branch,
                 face_encoding=enhanced_encoding
             )
         

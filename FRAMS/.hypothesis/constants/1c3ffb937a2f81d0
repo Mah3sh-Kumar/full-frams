@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\strictyaml\utils.py
-# hypothesis_version: 6.148.7
-
-[',', "<class 'str'>", "<type 'str'>", "<type 'unicode'>", '^0[xX]+[a-fA-F0-9]+$', '^[-+]?[0-9_]+$', '^\\.?(?:nan|NaN|NAN)$', 'no', 'yes']

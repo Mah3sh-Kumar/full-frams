@@ -74,7 +74,13 @@ export default function AuditLogsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor={tokens.colors.roles.admin.main} />
+      
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>
+        <Text style={styles.headerTitle}>Audit Logs</Text>
+        <Text style={styles.headerSubtitle}>System activity monitoring</Text>
+      </View>
 
       {loading ? (
         <View style={{ marginTop: 50 }}>
@@ -144,6 +150,31 @@ function DetailRow({ label, value, valueColor }: { label: string; value: string;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  header: {
+    paddingTop: 20,
+    paddingHorizontal: 26,
+    paddingBottom: 33,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    lineHeight: 28,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.8,
+    lineHeight: 22,
+  },
   list: { padding: 20 },
   logCard: {
     borderRadius: 12,

@@ -436,27 +436,29 @@ export default function ReportsScreen() {
                     {attendanceTrend.length > 0 && (
                         <View style={[styles.chartCard, { backgroundColor: getSurfaceColor() }]}>
                             <Text style={[styles.chartTitle, { color: getTextColor() }]}>Attendance Trends (Last 7 Days)</Text>
-                            <LineChart
-                                data={attendanceChartData}
-                                width={Dimensions.get('window').width - 72}
-                                height={200}
-                                yAxisSuffix="%"
-                                chartConfig={{
-                                    backgroundColor: getSurfaceColor(),
-                                    backgroundGradientFrom: getSurfaceColor(),
-                                    backgroundGradientTo: getSurfaceColor(),
-                                    decimalPlaces: 0,
-                                    color: (opacity = 1) => `rgba(79, 70, 229, ${opacity})`,
-                                    labelColor: (opacity = 1) => getTextColor(),
-                                    propsForDots: {
-                                        r: '6',
-                                        strokeWidth: '2',
-                                        stroke: tokens.colors.primary.main
-                                    }
-                                }}
-                                bezier
-                                style={{ borderRadius: 8 }}
-                            />
+                            <View style={{ alignItems: 'center' }}>
+                                <LineChart
+                                    data={attendanceChartData}
+                                    width={Dimensions.get('window').width - 82}
+                                    height={200}
+                                    yAxisSuffix="%"
+                                    chartConfig={{
+                                        backgroundColor: getSurfaceColor(),
+                                        backgroundGradientFrom: getSurfaceColor(),
+                                        backgroundGradientTo: getSurfaceColor(),
+                                        decimalPlaces: 0,
+                                        color: (opacity = 1) => `rgba(79, 70, 229, ${opacity})`,
+                                        labelColor: (opacity = 1) => getTextColor(),
+                                        propsForDots: {
+                                            r: '6',
+                                            strokeWidth: '2',
+                                            stroke: tokens.colors.primary.main
+                                        }
+                                    }}
+                                    bezier
+                                    style={{ borderRadius: 8 }}
+                                />
+                            </View>
                         </View>
                     )}
 
@@ -472,22 +474,24 @@ export default function ReportsScreen() {
                     {Object.keys(assignmentCompletion).length > 0 && (
                         <View style={[styles.chartCard, { backgroundColor: getSurfaceColor() }]}>
                             <Text style={[styles.chartTitle, { color: getTextColor() }]}>Assignment Completion Status</Text>
-                            <BarChart
-                                data={assignmentChartData}
-                                width={Dimensions.get('window').width - 72}
-                                height={200}
-                                yAxisLabel=""
-                                yAxisSuffix=""
-                                chartConfig={{
-                                    backgroundColor: getSurfaceColor(),
-                                    backgroundGradientFrom: getSurfaceColor(),
-                                    backgroundGradientTo: getSurfaceColor(),
-                                    decimalPlaces: 0,
-                                    color: (opacity = 1) => `rgba(22, 163, 74, ${opacity})`,
-                                    labelColor: (opacity = 1) => getTextColor(),
-                                }}
-                                style={{ borderRadius: 8 }}
-                            />
+                            <View style={{ alignItems: 'center' }}>
+                                <BarChart
+                                    data={assignmentChartData}
+                                    width={Dimensions.get('window').width - 82}
+                                    height={200}
+                                    yAxisLabel=""
+                                    yAxisSuffix=""
+                                    chartConfig={{
+                                        backgroundColor: getSurfaceColor(),
+                                        backgroundGradientFrom: getSurfaceColor(),
+                                        backgroundGradientTo: getSurfaceColor(),
+                                        decimalPlaces: 0,
+                                        color: (opacity = 1) => `rgba(22, 163, 74, ${opacity})`,
+                                        labelColor: (opacity = 1) => getTextColor(),
+                                    }}
+                                    style={{ borderRadius: 8 }}
+                                />
+                            </View>
                         </View>
                     )}
 
@@ -495,22 +499,24 @@ export default function ReportsScreen() {
                     {subjectPerformance.length > 0 && (
                         <View style={[styles.chartCard, { backgroundColor: getSurfaceColor() }]}>
                             <Text style={[styles.chartTitle, { color: getTextColor() }]}>Subject-wise Performance (Top 5)</Text>
-                            <BarChart
-                                data={subjectChartData}
-                                width={Dimensions.get('window').width - 72}
-                                height={200}
-                                yAxisLabel=""
-                                yAxisSuffix=""
-                                chartConfig={{
-                                    backgroundColor: getSurfaceColor(),
-                                    backgroundGradientFrom: getSurfaceColor(),
-                                    backgroundGradientTo: getSurfaceColor(),
-                                    decimalPlaces: 0,
-                                    color: (opacity = 1) => `rgba(124, 58, 237, ${opacity})`,
-                                    labelColor: (opacity = 1) => getTextColor(),
-                                }}
-                                style={{ borderRadius: 8 }}
-                            />
+                            <View style={{ alignItems: 'center' }}>
+                                <BarChart
+                                    data={subjectChartData}
+                                    width={Dimensions.get('window').width - 82}
+                                    height={200}
+                                    yAxisLabel=""
+                                    yAxisSuffix=""
+                                    chartConfig={{
+                                        backgroundColor: getSurfaceColor(),
+                                        backgroundGradientFrom: getSurfaceColor(),
+                                        backgroundGradientTo: getSurfaceColor(),
+                                        decimalPlaces: 0,
+                                        color: (opacity = 1) => `rgba(124, 58, 237, ${opacity})`,
+                                        labelColor: (opacity = 1) => getTextColor(),
+                                    }}
+                                    style={{ borderRadius: 8 }}
+                                />
+                            </View>
                         </View>
                     )}
 

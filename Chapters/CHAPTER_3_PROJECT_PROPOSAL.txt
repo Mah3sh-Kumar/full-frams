@@ -1,0 +1,221 @@
+----------------------------------------
+FILE: CHAPTER_3_PROJECT_PROPOSAL.txt
+----------------------------------------
+
+CHAPTER 3
+PROJECT PROPOSAL
+
+3.1 Introduction
+The management of student attendance in modern higher education institutions is a critical administrative function that directly impacts academic integrity, financial verification, and institutional discipline. In many colleges and universities across India, especially within the vast ecosystem of the University of Mumbai, this process remains characterized by manual recording or outdated electronic methods that are no longer adequate for high-traffic campus environments. The Face Recognition and Attendance Management System (FRAMS) is proposed as a comprehensive engineering response to these challenges. This system seeks to leverage advancements in computer vision and cloud-native architectures to create a frictionless, secure, and automated attendance ecosystem that serves as a practical institutional model for the digitally enabled academic campus environment.
+
+At its core, the proposed project addresses the operational inefficiencies in traditional attendance systems—a situation where significant instructional time is lost to manual roll-calling, and the authenticity of records is frequently compromised by proxy attendance. In a standard 50-minute lecture, instructors often spend up to 10 minutes simply calling out names and recording responses. Over an entire academic semester, this cumulative loss representing nearly 20% of instructional time becomes a significant hurdle to completing the syllabus and engaging in research-led teaching. While technology like RFID or fingerprint biometrics has been used in the past, these solutions suffer from token-exchange fraud and hygiene-related hardware fatigue. RFID tags allow for "card-swapping," where one student carries multiple IDs, and fingerprint scanners require constant physical contact, leading to sensor degradation and sanitization concerns in the post-pandemic era. 
+
+FRAMS proposes a non-intrusive, vision-based approach that identifies students passively as they enter the academic environment. This transition from "contact-based" to "vision-based" authentication represents a philosophical shift in institutional management—moving from policing attendance to intelligently observing it. The system is designed to handle the diverse lighting conditions and varying orientations found in real-world classrooms, ensuring that the technology is robust enough for daily institutional use.
+
+Crucially, the system is designed to be AI-enabled but not AI-trained. This distinction is vital for the current institutional context. Rather than embarking on the resource-intensive process of training custom deep neural networks—which requires massive, high-quality datasets and high-end GPU infrastructure that many colleges cannot afford—the system utilizes state-of-the-art pre-trained feature extraction models provided by the MediaPipe framework. By focusing on high-density feature extraction and mathematical vector comparisons rather than model training, the project ensures high accuracy and stability while reducing the computational overhead. This allows the system to remain mathematically rigorous without the "black box" complexity of proprietary deep learning frameworks.
+
+Furthermore, the deployment strategy for FRAMS is rooted in stability and cost-effectiveness. The system is designed for a Desktop/Laptop-based local edge deployment. This choice is deliberate and based on technical benchmarking. Unlike micro-controller-based systems such as the Raspberry Pi, which often face processing bottlenecks, thermal throttling, and stability issues when handling high-definition real-time video processing, a standard desktop or laptop provides the robust CPU power and cooling overhead required for continuous operation. A desktop edge node can maintain stable real-time frame processing performance without noticeable latency spikes, ensuring that the recognition process is seamless. This choice ensures that the system is ready for real-world classroom deployment using the existing desktop assets already present in most college laboratories and staff rooms, thereby reducing the total cost of ownership for the institution.
+
+3.2 Objectives
+The primary objective of the FRAMS project is to design and implement an end-to-end automated attendance solution that eliminates manual intervention and provides real-time data accessibility. The project is defined by several key technical and operational goals:
+
+1. Automation of Attendance: To achieve a high degree of automation in the capture and recording of student presence. The system aims to remove the "human-in-the-loop" requirement for record-keeping, allowing instructors to focus entirely on pedagogical delivery without the distraction of administrative roll-calling.
+
+2. Prevention of Proxy Attendance: To implement a robust identity verification mechanism that ensures the physical presence of the student being marked. By utilizing 1404-dimensional facial feature vectors, the system creates a unique mathematical signature for each student, which significantly reduces the probability of proxy attendance.
+
+3. Secure Role-Based Access: To develop a hierarchical access control system where data is isolated based on user roles. Students should only have visibility into their own historical records, while teachers manage specific class enrollments, and administrators oversee institution-wide branch data. This ensures that the system complies with basic principles of institutional security and data isolation.
+
+4. Real-Time Synchronization: To ensure that attendance marks captured at the local edge are synchronized with a centralized cloud database within a narrow latency window. This objective ensures that both students and faculty have immediate feedback on their attendance status through their respective mobile dashboards.
+
+5. Privacy-Preserving JSONB Vector Storage: To implement a data storage strategy that prioritizes user privacy. Instead of storing identifiable facial images, the system will extract and store mathematical encodings in a JSONB format. This approach ensures that the biometric identity of a student cannot be reversed to recreate an image, fulfilling the ethical and legal mandates for secure data handling.
+
+6. High Recognition Efficiency: To achieve a recognition latency that allows for sub-second processing under typical classroom lighting conditions. The goal is to ensure that the system processes students as they walk past the camera interface, maintaining a fluid flow of entrance without causing congestion or delay.
+
+3.3 Scope
+The scope of the FRAMS project is clearly defined to ensure technical feasibility within the academic timeline while maintaining industry-standard engineering depth.
+
+Included Modules:
+1. Local Edge Processing System: A desktop-based Python application that serves as the sensory node. This module includes camera interfacing, real-time frame capture, facial landmark extraction via MediaPipe, and local similarity calculations.
+2. Backend Cloud Infrastructure: A Supabase-based project (PostgreSQL) that manages the persistence layer. This includes the implementation of relational schemas for Classes, Branches, Students, and Attendance logs, along with Row Level Security (RLS) policies.
+3. Mobile User Interface: A cross-platform React Native application providing three distinct dashboards (Admin, Teacher, Student) for data visualization, enrollment management, and real-time reporting.
+4. Secure Authentication Flow: A JWT-based login system managed through Supabase Auth, ensuring that all interactions with the database are authorized and tracked.
+
+Explicit Exclusions:
+1. Custom Neural Network Training: The project will not involve training a new model from scratch. It relies on the pre-trained landmark models of MediaPipe for feature extraction.
+2. Raspberry Pi Deployment: The system is strictly designed for Desktop/Laptop edge nodes. Any deployment on low-power micro-controllers like Raspberry Pi is outside the scope due to performance constraints.
+3. Multi-Modal Biometric Fusion: The system focuses exclusively on face recognition. It will not include integration with fingerprints, iris scans, or voice biometrics.
+4. Cloud-Only AI Inference: The system will not stream raw video to the cloud for processing. Recognition must happen locally at the edge to ensure low latency and privacy.
+
+3.4 Methodology
+The development of FRAMS follows a structured Software Development Life Cycle (SDLC) based on an Iterative and Agile methodology. This approach was selected because Edge AI systems often require multiple rounds of fine-tuning for recognition thresholds, lighting compensation, and user dashboard layouts. By adopting an iterative model, the project ensures that each component—Edge, Backend, and Mobile—is refined based on real-world testing feedback rather than static requirements. This allows for an "iterative validation approach" where integration issues are identified early in the development cycle.
+
+Requirement Gathering: 
+The initial phase involves a systematic and comprehensive analysis of university attendance protocols. This includes identifying the core data entities (Student, Teacher, Class, Branch) and defining the functional requirements for each user persona. We will perform structured stakeholder interviews and laboratory observations to identify the specific pain points of manual recording. A rigorous feasibility study is also conducted to ensure that the chosen desktop hardware can handle the MediaPipe processing load without overheating or significant frame drops. This phase results in a detailed Software Requirement Specification (SRS) that serves as the technical contract for the entire project.
+
+System Design: 
+The design phase focuses on the multi-layered architecture of the system. We will design the Entity-Relationship Diagrams (ERD) for the Supabase backend, ensuring that normalization (up to 3NF) is maintained for data integrity and query performance. The Data Flow Diagrams (DFD) are drafted to visualize how a raw video frame at the edge is transformed into a mathematical vector and finally into a synchronized attendance log in the cloud. We will also design the high-fidelity UI/UX mockups for the React Native application, focusing on accessibility, responsive layouts for different screen sizes, and a consistent aesthetic. The design process is not linear; any architectural shifts identified during the initial prototyping are fed back into the design documents to maintain consistency.
+
+Implementation: 
+The implementation is executed in three parallel tracks to maximize development efficiency and minimize dependencies. The Edge Module (Python) is built first, focusing on the integration of PySide6 and MediaPipe for stable frame capture. The Mobile Module (React Native) is developed concurrently, using mock data until the backend is fully provisioned. The Database Layer (PostgreSQL/Supabase) is provisioned with custom Remote Procedure Calls (RPCs) to handle complex server-side logic and Row Level Security policies to enforce data isolation. The most critical part of this phase is the integration of the MediaPipe-based landmark extraction with the similarity matching logic and the subsequent cloud-push mechanism via REST APIs.
+
+Testing: 
+Testing is the most intensive phase of the project, performed at multiple granular levels. Unit testing focuses on individual modules, such as the vector similarity math and the authentication state hooks. Integration testing verifies the synchronization latency between the edge node and the cloud to ensure it meets our acceptable real-time synchronization window. System testing involves end-to-end validation of the complete attendance flow, starting from the moment a student stands before the camera to the moment a notification appears on the teacher's dashboard. We also conduct environment-specific testing, evaluating the system under various lighting conditions (fluorescent, daylight, dim shadows) to calibrate the optimal recognition threshold that minimizes both false positives and false negatives.
+
+Deployment: 
+The final phase involves the deployment of the Local Edge Node in a classroom setting and the distribution of the mobile application binary. This phase includes the creation of "Institutional Onboarding" documentation and troubleshooting guides, which help administrators through the process of registering students and setting up class schedules. A pilot run is conducted to monitor the system under actual load, ensuring that the Supabase connection pool and edge processing cycle remain stable during high-traffic periods, such as the start of a morning lecture. Final refinements and performance tuning are made based on the outcomes of this pilot deployment before the project is considered complete.
+
++-------------------+      +------------------+      +------------------+
+| Requirement       | ---> | System Design    | ---> | Implementation   |
+| Analysis          |      | (ERD, DFD, UI)   |      | (Edge + Backend) |
++-------------------+      +------------------+      +------------------+
+         |                                                   |
+         v                                                   v
++-------------------+      <------------------      +------------------+
+| Testing &         |                               | Deployment       |
+| Validation        |                               | (Classroom Edge) |
++-------------------+                               +------------------+
+
+Figure 3.1: Software Development Life Cycle (SDLC) Mapping
+The methodology described follows a non-linear, iterative SDLC flow where each phase informs the next while allowing for feedback loops. This structure ensures that the complex requirements of Edge AI are validated periodically against the system design and implementation phases to ensure overall reliability.
+
+3.5 Tools and Technologies
+The technical stack selected for FRAMS reflects a modern, industry-standard approach to building hybrid AI systems. Each tool has been chosen based on its performance characteristics, community support, and ability to handle the specific rigors of real-time computer vision and cloud synchronization.
+
+Programming Languages:
+- Python 3.x: The primary language for the Edge Processing System, chosen for its extensive computer vision ecosystem, high-performance libraries, and its status as the industry standard for AI development. Python's ability to handle multi-processing ensures that frame capture and recognition do not block each other, maintaining a smooth user experience.
+- JavaScript/TypeScript: Used for the development of the multi-role mobile application and frontend logic. TypeScript, in particular, provides the type safety required for handling complex attendance data structures and API responses reliably.
+
+Frameworks and Libraries:
+- PySide6: Used to build the graphical user interface for the desktop edge node. It provides a robust, professional-grade Qt-based environment that allows for low-latency rendering of real-time video streams and interactive UI elements for local administration.
+- OpenCV: Utilized for low-level image processing, camera management, and frame manipulation before landmark extraction. OpenCV's highly optimized C++ core provides the efficiency needed for pre-processing high-definition video frames.
+- MediaPipe: The core AI-based feature extraction framework used for high-precision face landmark detection and integrated face mesh extraction. It utilizes advanced machine learning models (BlazeFace and Face Mesh) to identify 468 precise coordinates on the human face, providing the "AI-enabled" intelligence of the system without the need for custom training.
+- NumPy: Essential for the mathematical operations involved in vector processing, normalization, and similarity distance calculations. Its ability to perform high-speed array manipulations is critical for sub-second recognition.
+- React Native: Chosen for the mobile application to ensure a single, maintainable codebase for both iOS and Android platforms. It allows the system to reach the entire student body regardless of their device preference, providing a native-feeling experience with modern UI components.
+- Supabase: The Backend-as-a-Service (BaaS) providing a production-grade PostgreSQL database, real-time synchronization, and secure authentication. Supabase's "Cloud-Native" approach simplifies the infrastructure management while providing enterprise-level security features like RLS and built-in API layers.
+
+Database and Storage:
+- PostgreSQL: The relational core of the system, known for its extreme reliability, data integrity, and support for advanced data types. It acts as the "Single Source of Truth" for all institutional records.
+- JSONB: This specific binary JSON format in PostgreSQL is used for storing the 1404-dimensional facial feature vectors. JSONB allows us to store complex mathematical signatures as a single, indexed field, enabling faster comparison and similarity searches compared to traditional flat column structures.
+- Row Level Security (RLS): Database-level policies to ensure data isolation among different user roles (Admin, Teacher, Student). RLS acts as the final guardrail, ensuring that users can only access the specific rows they are authorized to see, even if the application logic is bypassed.
+
+Utility Libraries:
+- python-dotenv: For managing sensitive API keys and institutional environment variables securely, preventing the exposure of credentials in the source code.
+- python-dateutil: For high-precision timestamping and complex scheduling logic required for academic session management.
+- Pillow: For advanced image pre-processing, cropping, and buffer management at the edge processing node.
+
+Hardware Environment:
+- Desktop/Laptop Performance Hardware: Minimum Deployment Requirement: A modern multi-core processor (Intel i5/Ryzen 5 or equivalent) and 8GB of RAM. This ensures that the system can maintain a stable real-time frame processing performance while simultaneously handling cloud synchronization and UI updates.
+- HD Web Camera: A high-definition camera module (720p minimum) with a wide field of view to capture clear facial landmarks from a distance, reducing the need for students to stop and pose.
+- High-Speed Internet: A reliable campus network connection for real-time synchronization between the local edge node and the Supabase cloud. The system is designed to handle intermittent outages through local buffering, but a constant connection is required for real-time dashboard updates.
+
++----------------------+
+|   React Native App   |
++----------+-----------+
+           |
++----------v-----------+
+|     Supabase BaaS    |
+| (PostgreSQL + RLS)   |
++----------+-----------+
+           |
++----------v-----------+
+| Desktop Edge System  |
+| (MediaPipe + OpenCV) |
++----------------------+
+
+Figure 3.2: Technology Stack Overview
+The multi-layered technology stack facilitates a seamless flow of data from local edge capture to secure cloud persistence. Each layer is selected to minimize latency while maximizing the security and accessibility of student records across different platform dashboards.
+
+3.6 Timeline
+The project is scheduled for an 8-month development cycle, ensuring that each phase of the SDLC is given sufficient depth and documentation.
+
+Month 1: Planning and Research
+The first month is dedicated to a thorough review of existing technologies and university guidelines. This involves finalizing the SRS (Software Requirement Specification) and setting up the development environments for Python and React Native.
+
+Month 2: Architectural Design
+In the second month, the focus shifts to designing the database schema and system flow. Entity-Relationship Diagrams and High-Level Architecture diagrams are drafted. The Supabase project is provisioned with initial table structures.
+
+Month 3-4: Edge Module Development
+This phase involves building the core recognition engine. We will implement the PySide6 interface and integrate the MediaPipe-based landmark extraction. By the end of Month 4, the edge node should be capable of local facial recognition.
+
+Month 5: Mobile App and Backend Integration
+Development of the React Native dashboards begins. We will implement user authentication via Supabase Auth and build the logic for teachers and students to view attendance data. The synchronization bridge between the edge node and the cloud is established.
+
+Month 6: System Refinement and Testing
+This month is dedicated to rigorous testing. We will perform unit tests, security audits of the RLS policies, and performance benchmarking. Any bugs found during the integration phase will be resolved.
+
+Month 7: Pilot Deployment and Feedback
+The system is deployed in a controlled classroom environment for a pilot run. Feedback from users (teachers and students) is collected to make final UI/UX adjustments and threshold calibrations.
+
+Month 8: Documentation and Final Submission
+The final month is focused on completing the dissertation documentation, including the final walkthroughs, manual guides, and code analysis. The project is prepared for the final university presentation.
+
+Months:  1   2   3   4   5   6   7   8
+-------------------------------------------------
+Planning      [====]
+Design            [====]
+Edge Dev             [========]
+Mobile Dev                 [====]
+Testing                       [====]
+Pilot Deployment                 [==]
+Documentation                      [====]
+
+Figure 3.3: Project Development Schedule (Gantt Chart)
+The project schedule illustrates the overlapping development tracks for the edge and mobile modules, followed by a rigorous testing and pilot deployment phase. This timeline ensures that institutional feedback can be incorporated during the final documentation month for maximum accuracy.
+
+3.7 Resources
+The successful implementation of FRAMS requires a combination of hardware, software, and intellectual resources.
+
+Hardware Requirements:
+1. Recommended Development Environment: A desktop or laptop with at least an Intel i5 (or equivalent) processor and 16GB RAM for efficient multi-tasking and compilation of mobile bundles.
+2. Edge Node System: A desktop PC or laptop located at the classroom entrance, equipped with a standard USB or integrated HD camera.
+3. Mobile Devices: Android and iOS smartphones for testing the mobile application interface.
+
+Software Resources:
+1. Integrated Development Environments: VS Code for general coding and specialized tools for Python and React Native.
+2. Cloud Services: A Supabase account for database hosting and authentication services.
+3. Version Control: GitHub for managing the codebase and tracking development history.
+
+Administrative and Technical Resources:
+1. Internet Connectivity: Low-latency broadband for real-time data sync.
+2. Access to Institutional Data: Permission to use a sample dataset of student names and enrollment numbers for system validation.
+3. Technical Documentation: Access to MediaPipe and Supabase official research documentation for advanced implementation patterns.
+
++----------------------+---------------------------+
+| Resource Type        | Allocation Focus          |
++----------------------+---------------------------+
+| Hardware             | Desktop Edge + Camera     |
+| Backend              | Supabase Cloud Services   |
+| Development Tools    | Python, React Native      |
+| Testing              | Lighting & Load Scenarios |
++----------------------+---------------------------+
+
+Figure 3.4: Resource Allocation Overview
+This overview details the critical resource categories required for the project's success. The allocation strategy ensures that hardware stability at the edge and secure cloud infrastructure in the backend are prioritized to meet institutional reliability standards.
+
+3.8 Expected Outcomes
+Upon completion, the FRAMS project is expected to deliver a series of tangible academic and technical outcomes:
+
+Functional Attendance System: A fully operational desktop application capable of real-time face recognition and local log generation using MediaPipe feature extraction.
+
+Secure Cloud Synchronization: An integrated backend on Supabase that stores attendance data securely, ensuring that no data is lost even during intermittent network outages through local buffering.
+
+Multi-Role Mobile Dashboards: A cross-platform mobile application that provides instant feedback to students and management tools to teachers. The app will feature high-quality aesthetics and intuitive role-based navigation.
+
+Real-Time Reporting: The ability for administrators to generate attendance reports instantly, eliminating the weeks-long delay associated with manual data entry.
+
+Authenticated Security Model: A system that adheres to industry standards for security, featuring JWT-based authentication and database-level RLS policies that prevent unauthorized data access.
+
+Complete Academic Documentation: A comprehensive 100-page dissertation that documents every stage of the development process, including the mathematical models, architecture designs, and testing results.
+
+3.9 Alignment with University Guidelines
+The FRAMS project is meticulously tailored to align with the USCSP505/605 course requirements for the T.Y.B.Sc. Computer Science program. It satisfies the core pillars of computer science education through a rigorous application of theoretical knowledge to an engineering challenge.
+
+Real-Life Problem Solving: The project addresses a genuine administrative obstacle faced by every academic institution. By automating a critical manual task, the project demonstrates the student's ability to deconstruct a nebulous problem into technical requirements and implement a functional solution that improves institutional efficiency. This alignment ensures that the final product is not just an academic exercise but a tool with measurable social and organizational impact.
+
+Full-Cycle SDLC Exposure: The project does not merely focus on coding; it covers the entire engineering lifecycle. By documenting each phase from requirements and hardware-software feasibility to rigorous testing and deployment, the project provides a vertical slice of professional software development. This breadth of exposure is a mandatory requirement for the university dissertation, proving that the student can manage the complexities of a long-term engineering project from conception to completion.
+
+Adherence to Industry Standards: By using professional-grade tools like React Native and Supabase, and implementing security patterns like JWT authentication and database-level RLS, the project mirrors the high-standard workflows of modern software development firms. This adherence prepares the student for a successful professional transition into the IT workforce, ensuring that the skills demonstrated are current and relevant to industrial demands.
+
+Ethical Data Handling and Privacy: The project places a strong emphasis on the ethical dimension of modern AI. By utilizing mathematical landmarks (vectors) instead of raw facial images, it demonstrates a sophisticated awareness of data privacy regulations (such as the DPDP Act 2023). This ethical framework ensures that the system is designed with transparency and user protection in mind, reflecting the maturity expected of a computer science professional.
+
+Technical and Mathematical Rigor: The integration of high-dimensional feature vectors and multi-level synchronization logic provides the necessary technical depth expected of a final-year B.Sc. student. By applying mathematical similarity metrics (Cosine Similarity) within a complex software architecture, the project proves mastery over both the theoretical foundations and the practical implementations of modern computer science.

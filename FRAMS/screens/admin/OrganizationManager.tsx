@@ -51,12 +51,17 @@ import {
   BranchItem,
   DepartmentItem,
 } from '../../lib/organization';
+import { SubjectItem, AcademicYearItem } from '../../lib/types';
+import { getSubjects, createSubject, updateSubject, deleteSubject, copySubjectsForAcademicYear } from '../../lib/subjects';
 
-type TabType = 'classes' | 'branches' | 'departments';
+type TabType = 'classes' | 'branches' | 'departments' | 'subjects';
 
 import CreateClassForm from '../../components/admin/organization/CreateClassForm';
 import CreateBranchForm from '../../components/admin/organization/CreateBranchForm';
 import CreateDepartmentForm from '../../components/admin/organization/CreateDepartmentForm';
+import SubjectCard from '../../components/admin/subjects/SubjectCard';
+import SubjectForm from '../../components/admin/subjects/SubjectForm';
+import AcademicYearTransitionDialog from '../../components/admin/subjects/AcademicYearTransitionDialog';
 
 export default function OrganizationManager() {
   const { tokens, getTextColor, getSurfaceColor, getTextSecondaryColor, getBackgroundColor, mode } = useTheme();
@@ -67,6 +72,14 @@ export default function OrganizationManager() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [branches, setBranches] = useState<BranchItem[]>([]);
   const [departments, setDepartments] = useState<DepartmentItem[]>([]);
+  const [subjects, setSubjects] = useState<SubjectItem[]>([]);
+
+  // Subject-specific states
+  const [selectedSubject, setSelectedSubject] = useState<SubjectItem | null>(null);
+  const [currentAcademicYear, setCurrentAcademicYear] = useState<string | null>(null);
+  const [academicYears, setAcademicYears] = useState<AcademicYearItem[]>([]);
+  const [showArchivedSubjects, setShowArchivedSubjects] = useState(false);
+  const [transitionDialogVisible, setTransitionDialogVisible] = useState(false);
 
   // Modal states
   const [modalVisible, setModalVisible] = useState(false);
@@ -83,6 +96,13 @@ export default function OrganizationManager() {
     fetchData();
   }, [activeTab]);
 
+  // Refetch subjects when showArchivedSubjects toggle changes
+  useEffect(() => {
+    if (activeTab === 'subjects') {
+      fetchSubjects();
+    }
+  }, [showArchivedSubjects]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -97,6 +117,8 @@ export default function OrganizationManager() {
         // Also fetch classes for the dropdown
         const classesResult = await getClasses(true);
         if (classesResult.data) setClasses(classesResult.data);
+      } else if (activeTab === 'subjects') {
+        await fetchSubjects();
       } else {
         const { data, error } = await getDepartments(true);
         if (error) throw new Error(error);
@@ -109,8 +131,28 @@ export default function OrganizationManager() {
     }
   };
 
+  const fetchSubjects = async () => {
+    try {
+      const { data, error } = await getSubjects(
+        showArchivedSubjects, // includeInactive - pass the toggle state
+        false, // includeDeleted
+        currentAcademicYear || undefined
+      );
+
+      if (error) {
+        Alert.alert('Error', error);
+        return;
+      }
+
+      setSubjects(data || []);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to fetch subjects');
+    }
+  };
+
   const openCreateModal = () => {
     setEditingItem(null);
+    setSelectedSubject(null);
     setModalVisible(true);
   };
 
@@ -185,6 +227,127 @@ export default function OrganizationManager() {
     }
   };
 
+  const handleSubjectSubmit = async (
+    name: string,
+    code: string,
+    classId: string,
+    academicYearId: string,
+    teacherIds: string[],
+    primaryTeacherId: string,
+    isActive: boolean
+  ) => {
+    setSaving(true);
+    try {
+      let result;
+      if (selectedSubject) {
+        // Update existing subject
+        result = await updateSubject(
+          selectedSubject.id,
+          { name, code, class_id: classId, is_active: isActive },
+          teacherIds,
+          primaryTeacherId
+        );
+      } else {
+        // Create new subject
+        result = await createSubject(name, code, classId, academicYearId, teacherIds, primaryTeacherId, isActive);
+      }
+
+      // Handle validation errors and database errors
+      if (result.error) {
+        // Display user-friendly error message
+        Alert.alert('Error', result.error);
+        return;
+      }
+
+      // Display success alert
+      Alert.alert('Success', `Subject ${selectedSubject ? 'updated' : 'created'} successfully`);
+      
+      // Close modal
+      setModalVisible(false);
+      setSelectedSubject(null);
+      
+      // Refresh subject list
+      fetchData();
+    } catch (error: any) {
+      // Handle unexpected errors
+      console.error('Error in handleSubjectSubmit:', error);
+      Alert.alert('Error', error.message || 'Failed to save subject');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubjectDelete = async (subject: SubjectItem) => {
+    // Display confirmation dialog with subject name
+    // Warn that action will archive the subject
+    Alert.alert(
+      'Delete Subject',
+      `Are you sure you want to delete "${subject.name}"?\n\nThis action will archive the subject.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Call deleteSubject() with subject id and name
+              const { error } = await deleteSubject(subject.id, subject.name);
+
+              // Handle dependency errors with detailed counts
+              if (error) {
+                // Display specific messages for attendance, timetable, and face recognition dependencies
+                // The error message from deleteSubject already includes detailed counts and suggests archiving
+                Alert.alert('Cannot Delete Subject', error);
+                return;
+              }
+
+              // Display success alert on successful soft deletion
+              Alert.alert('Success', `Subject "${subject.name}" has been archived successfully`);
+              
+              // Refresh subject list (soft-deleted subjects will be excluded)
+              fetchData();
+            } catch (error: any) {
+              // Handle other database errors with user-friendly messages
+              console.error('Error in handleSubjectDelete:', error);
+              Alert.alert('Error', error.message || 'Failed to delete subject');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleAcademicYearTransition = async (sourceYearId: string, targetYearId: string) => {
+    try {
+      // Call copySubjectsForAcademicYear
+      const { data, error } = await copySubjectsForAcademicYear(sourceYearId, targetYearId);
+
+      // Handle errors
+      if (error) {
+        Alert.alert('Error', error);
+        throw new Error(error); // Re-throw to prevent dialog from closing
+      }
+
+      // Display summary showing number of subjects copied
+      if (data) {
+        Alert.alert(
+          'Success',
+          `Successfully copied ${data.copied_count} subject${data.copied_count !== 1 ? 's' : ''} to the target academic year.`
+        );
+      }
+
+      // Refresh subject list after successful copy
+      fetchData();
+    } catch (error: any) {
+      // Error already displayed in Alert above
+      console.error('Error in handleAcademicYearTransition:', error);
+      throw error; // Re-throw to keep dialog open
+    }
+  };
+
   const handleDelete = async () => {
     if (!itemToDelete) return;
 
@@ -216,6 +379,25 @@ export default function OrganizationManager() {
   const confirmDelete = (item: any) => {
     setItemToDelete(item);
     setDeleteConfirmVisible(true);
+  };
+
+  const renderSubjectItem = ({ item }: { item: SubjectItem }) => {
+    return (
+      <SubjectCard
+        subject={item}
+        onEdit={(subject) => {
+          // Set selectedSubject state with current subject data
+          setSelectedSubject(subject);
+          
+          // Open SubjectForm modal with initialValues
+          // The form will automatically load teacher assignments from subject.teachers
+          // and extract teacherIds and primaryTeacherId
+          setModalVisible(true);
+        }}
+        onDelete={handleSubjectDelete}
+        showActions={true}
+      />
+    );
   };
 
   const renderItem = ({ item }: { item: ClassItem | BranchItem | DepartmentItem }) => {
@@ -306,7 +488,8 @@ export default function OrganizationManager() {
     let data: (ClassItem | BranchItem | DepartmentItem)[] = [];
     if (activeTab === 'classes') data = classes;
     else if (activeTab === 'branches') data = branches;
-    else data = departments;
+    else if (activeTab === 'departments') data = departments;
+    else return []; // subjects handled separately
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -324,6 +507,31 @@ export default function OrganizationManager() {
       }
       const dateA = 'created_at' in a && a.created_at ? new Date(a.created_at).getTime() : 0;
       const dateB = 'created_at' in b && b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    return data;
+  };
+
+  const getFilteredSubjects = () => {
+    let data = [...subjects];
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      data = data.filter(item => 
+        item.name.toLowerCase().includes(query) ||
+        item.code.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort data
+    data = data.sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
       return dateB - dateA;
     });
 
@@ -358,6 +566,19 @@ export default function OrganizationManager() {
             onCancel={() => setModalVisible(false)}
             loading={saving}
             initialValues={editingItem as DepartmentItem | undefined}
+          />
+        );
+      case 'subjects':
+        return (
+          <SubjectForm
+            onSubmit={handleSubjectSubmit}
+            onCancel={() => setModalVisible(false)}
+            loading={saving}
+            initialValues={selectedSubject ? {
+              ...selectedSubject,
+              teacher_ids: selectedSubject.teachers?.map(t => t.id) || [],
+              primary_teacher_id: selectedSubject.teachers?.find(t => t.is_primary)?.id || ''
+            } : undefined}
           />
         );
       default:
@@ -484,6 +705,37 @@ export default function OrganizationManager() {
       borderRadius: 12,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    filterContainer: {
+      paddingHorizontal: 24,
+      marginBottom: 16,
+    },
+    filterRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    filterToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    filterToggleText: {
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    transitionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+    },
+    transitionButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#FFFFFF',
     },
     list: {
       padding: 24,
@@ -662,6 +914,10 @@ export default function OrganizationManager() {
                 <Text style={styles.statNumber}>{departments.length}</Text>
                 <Text style={styles.statLabel}>Depts</Text>
               </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{subjects.length}</Text>
+                <Text style={styles.statLabel}>Subjects</Text>
+              </View>
             </View>
           </View>
           <TouchableOpacity
@@ -685,6 +941,7 @@ export default function OrganizationManager() {
             { value: 'classes' as TabType, label: 'Classes', icon: 'school-outline' },
             { value: 'branches' as TabType, label: 'Branches', icon: 'git-branch-outline' },
             { value: 'departments' as TabType, label: 'Departments', icon: 'business-outline' },
+            { value: 'subjects' as TabType, label: 'Subjects', icon: 'book-outline' },
           ].map((tab) => (
             <TouchableOpacity
               key={tab.value}
@@ -693,6 +950,11 @@ export default function OrganizationManager() {
                 activeTab === tab.value && { backgroundColor: tokens.colors.primary.main },
               ]}
               onPress={() => setActiveTab(tab.value)}
+              accessible
+              accessibilityRole="tab"
+              accessibilityLabel={`${tab.label} tab`}
+              accessibilityState={{ selected: activeTab === tab.value }}
+              accessibilityHint={`Switches to ${tab.label} view`}
             >
               <Ionicons
                 name={tab.icon as any}
@@ -714,7 +976,11 @@ export default function OrganizationManager() {
 
       {/* Search and Sort Bar */}
       <View style={styles.searchContainer}>
-        <View style={[styles.searchInputContainer, { backgroundColor: getSurfaceColor() }]}>
+        <View 
+          style={[styles.searchInputContainer, { backgroundColor: getSurfaceColor() }]}
+          accessible
+          accessibilityRole="search"
+        >
           <Ionicons name="search" size={20} color={getTextSecondaryColor()} />
           <TextInput
             style={[styles.searchInput, { color: getTextColor() }]}
@@ -722,9 +988,18 @@ export default function OrganizationManager() {
             placeholderTextColor={getTextSecondaryColor()}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            accessible
+            accessibilityLabel={`Search ${activeTab}`}
+            accessibilityHint={`Type to filter ${activeTab} by name or code`}
           />
           {searchQuery !== '' && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity 
+              onPress={() => setSearchQuery('')}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              accessibilityHint="Clears the search text"
+            >
               <Ionicons name="close-circle" size={20} color={getTextSecondaryColor()} />
             </TouchableOpacity>
           )}
@@ -732,6 +1007,10 @@ export default function OrganizationManager() {
         <TouchableOpacity
           style={[styles.sortButton, { backgroundColor: getSurfaceColor() }]}
           onPress={() => setSortBy(sortBy === 'name' ? 'date' : 'name')}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={`Sort by ${sortBy === 'name' ? 'date' : 'name'}`}
+          accessibilityHint={`Currently sorting by ${sortBy}, tap to change`}
         >
           <Ionicons
             name={sortBy === 'name' ? 'text-outline' : 'time-outline'}
@@ -741,10 +1020,65 @@ export default function OrganizationManager() {
         </TouchableOpacity>
       </View>
 
+      {/* Show Archived Toggle for Subjects Tab */}
+      {activeTab === 'subjects' && (
+        <View style={styles.filterContainer}>
+          <View style={styles.filterRow}>
+            <TouchableOpacity
+              style={styles.filterToggle}
+              onPress={() => setShowArchivedSubjects(!showArchivedSubjects)}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Show archived subjects toggle"
+              accessibilityHint={`Currently ${showArchivedSubjects ? 'showing' : 'hiding'} archived subjects`}
+            >
+              <Ionicons
+                name={showArchivedSubjects ? 'checkbox' : 'square-outline'}
+                size={24}
+                color={showArchivedSubjects ? tokens.colors.primary.main : getTextSecondaryColor()}
+              />
+              <Text style={[styles.filterToggleText, { color: getTextColor() }]}>
+                Show Archived
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.transitionButton, { backgroundColor: tokens.colors.primary.main }]}
+              onPress={() => setTransitionDialogVisible(true)}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Academic Year Transition"
+              accessibilityHint="Copy subjects from one academic year to another"
+            >
+              <Ionicons name="swap-horizontal" size={20} color="#FFFFFF" />
+              <Text style={styles.transitionButtonText}>
+                Year Transition
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <LoadingSpinner size="large" />
         </View>
+      ) : activeTab === 'subjects' ? (
+        <FlatList
+          data={getFilteredSubjects()}
+          renderItem={renderSubjectItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          refreshing={loading}
+          onRefresh={fetchSubjects}
+          ListEmptyComponent={
+            <EmptyState
+              icon="book-outline"
+              title="No subjects found"
+              message="Create your first subject to get started"
+            />
+          }
+        />
       ) : (
         <FlatList
           data={getCurrentData()}
@@ -822,6 +1156,13 @@ export default function OrganizationManager() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteConfirmVisible(false)}
         destructive
+      />
+
+      {/* Academic Year Transition Dialog */}
+      <AcademicYearTransitionDialog
+        visible={transitionDialogVisible}
+        onClose={() => setTransitionDialogVisible(false)}
+        onConfirm={handleAcademicYearTransition}
       />
       </View>
     </SafeAreaView>

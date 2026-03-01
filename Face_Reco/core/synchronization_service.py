@@ -136,11 +136,12 @@ class SynchronizationService:
                             status=record.get('status', 'present')
                         )
                     
-                    # mark_attendance returns boolean, not a dict
-                    if sync_result:  # True means success
+                    # mark_attendance now returns dict with success/error
+                    if sync_result.get('success', False):
                         synced_count += 1
                     else:
-                        errors.append(f"Failed to sync record for student {record.get('student_id', 'unknown')}: Unknown error")
+                        error_msg = sync_result.get('error', 'Unknown error')
+                        errors.append(f"Failed to sync record for student {record.get('student_id', 'unknown')}: {error_msg}")
                 
                 except Exception as e:
                     errors.append(f"Error syncing record for student {record.get('student_id', 'unknown')}: {str(e)}")

@@ -330,14 +330,14 @@ class RecognitionWidget(QWidget):
         timestamp = datetime.now()
         
         # Save to database
-        success = self.db.mark_attendance(
+        result = self.db.mark_attendance(
             student_id=student_id,
             subject_id=self.session_data['subject_id'],
             date=self.session_data['date'],
             status='present'
         )
         
-        if success:
+        if result.get('success', False):
             # Add to local records
             self.attendance_records[student_id] = timestamp
             

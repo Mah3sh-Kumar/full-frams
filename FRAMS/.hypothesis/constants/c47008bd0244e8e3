@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\strictyaml\compound.py
-# hypothesis_version: 6.148.7
-
-["', '", ', ', 'FixedSeq({0})', 'Map({{{0}}})', 'MapPattern({0}, {1})', 'Optional("{0}")', 'Seq({0})', 'UniqueSeq({0})', 'a mapping', 'a sequence', 'duplicate found', 's', '{0}: {1}']

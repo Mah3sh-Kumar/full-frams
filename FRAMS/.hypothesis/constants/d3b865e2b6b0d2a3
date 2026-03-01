@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\table\refs.py
-# hypothesis_version: 6.148.7
-
-['SnapshotRef', 'after', 'branch', 'main', 'max-ref-age-ms', 'max-snapshot-age-ms', 'snapshot-id', 'tag', 'type']

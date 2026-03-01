@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\strictyaml\constants.py
-# hypothesis_version: 6.148.7
-
-['.+?\\@.+?', '0', '1', 'email', 'false', 'n', 'no', 'off', 'on', 'true', 'y', 'yes']

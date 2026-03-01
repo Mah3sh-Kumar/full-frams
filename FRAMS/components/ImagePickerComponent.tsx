@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image, Alert, Platform } from 'react-native';
+import { View, StyleSheet, Image, Alert, Platform, TouchableOpacity } from 'react-native';
 import { Button, ActivityIndicator, IconButton } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../lib/design-system/ThemeContext';
@@ -130,49 +130,62 @@ export default function ImagePickerComponent({
             alignItems: 'center',
             borderRadius: tokens.borders.radius.full,
         },
-        cameraButton: {
+        cameraButtonContainer: {
             position: 'absolute',
             bottom: 0,
             right: 0,
+            backgroundColor: tokens.colors.primary.main,
+            borderRadius: tokens.borders.radius.full,
+            padding: 4,
+        },
+        cameraButton: {
             margin: 0,
         },
     });
 
     return (
         <View style={styles.container}>
-            <View style={[styles.imageContainer, { width: size, height: size }]}>
-                {imageUri ? (
-                    <Image
-                        source={{ uri: imageUri }}
-                        style={[styles.image, { width: size, height: size }]}
-                    />
-                ) : (
-                    <View style={[styles.placeholder, { width: size, height: size }]}>
-                        <IconButton
-                            icon="account"
-                            size={size * 0.5}
-                            iconColor={getTextSecondaryColor()}
+            <TouchableOpacity 
+                onPress={pickImage} 
+                disabled={uploading}
+                activeOpacity={0.8}
+            >
+                <View style={[styles.imageContainer, { width: size, height: size }]}>
+                    {imageUri ? (
+                        <Image
+                            source={{ uri: imageUri }}
+                            style={[styles.image, { width: size, height: size }]}
                         />
-                    </View>
-                )}
+                    ) : (
+                        <View style={[styles.placeholder, { width: size, height: size }]}>
+                            <IconButton
+                                icon="account"
+                                size={size * 0.5}
+                                iconColor={getTextSecondaryColor()}
+                            />
+                        </View>
+                    )}
 
-                {uploading && (
-                    <View style={styles.uploadingOverlay}>
-                        <ActivityIndicator size="large" color={tokens.colors.primary.main} />
-                    </View>
-                )}
+                    {uploading && (
+                        <View style={styles.uploadingOverlay}>
+                            <ActivityIndicator size="large" color={tokens.colors.primary.main} />
+                        </View>
+                    )}
 
-                <IconButton
-                    icon="camera"
-                    mode="contained"
-                    iconColor="white"
-                    containerColor={tokens.colors.primary.main}
-                    size={24}
-                    style={styles.cameraButton}
-                    onPress={pickImage}
-                    disabled={uploading}
-                />
-            </View>
+                    {!imageUri && (
+                        <View style={styles.cameraButtonContainer}>
+                            <IconButton
+                                icon="camera"
+                                mode="contained"
+                                iconColor="white"
+                                containerColor={tokens.colors.primary.main}
+                                size={20}
+                                style={styles.cameraButton}
+                            />
+                        </View>
+                    )}
+                </View>
+            </TouchableOpacity>
         </View>
     );
 }

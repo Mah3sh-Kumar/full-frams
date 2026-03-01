@@ -206,8 +206,8 @@ export default function NotificationsScreen({ navigation }: Props) {
     if (notifications.length === 0) {
         return (
             <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
-                <View style={[styles.header, { backgroundColor: getSurfaceColor() }]}>
-                    <Text style={[styles.headerTitle, { color: getTextColor() }]}>Notifications</Text>
+                <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>
+                    <Text style={[styles.headerTitle, { color: tokens.colors.neutral.white }]}>Notifications</Text>
                 </View>
                 <EmptyState
                     icon="bell-outline"
@@ -220,8 +220,8 @@ export default function NotificationsScreen({ navigation }: Props) {
 
     return (
         <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
-            <View style={[styles.header, { backgroundColor: getSurfaceColor() }]}>
-                <Text style={[styles.headerTitle, { color: getTextColor() }]}>Notifications</Text>
+            <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>
+                <Text style={[styles.headerTitle, { color: tokens.colors.neutral.white }]}>Notifications</Text>
                 {notifications.length > 0 && (
                     <Button
                         variant="ghost"
@@ -256,12 +256,20 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: tokens.spacing.md,
-        ...tokens.shadows.sm,
+        paddingTop: 45,
+        paddingHorizontal: 26,
+        paddingBottom: 33,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
     },
     headerTitle: {
-        fontSize: tokens.typography.h2.fontSize,
-        fontWeight: tokens.typography.h2.fontWeight,
+        fontSize: 24,
+        fontWeight: '800',
+        color: tokens.colors.neutral.white,
+        lineHeight: 28,
     },
     sectionHeader: {
         paddingHorizontal: tokens.spacing.md,

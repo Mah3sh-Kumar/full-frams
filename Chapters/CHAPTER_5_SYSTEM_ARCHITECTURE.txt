@@ -1,0 +1,193 @@
+----------------------------------------
+FILE: CHAPTER_5_SYSTEM_ARCHITECTURE.txt
+----------------------------------------
+
+CHAPTER 5
+SYSTEM ARCHITECTURE DESIGN
+
+5.1 INTRODUCTION
+
+The system architecture serves as the conceptual model that defines the structure, behavior, and more views of a system. An architectural description is a formal description and representation of a system, organized in a way that supports reasoning about the structures and behaviors of the system. In the context of the Software Development Life Cycle (SDLC), the design phase transforms the requirements identified in the analysis phase into a blueprint for construction.
+
+For the Face Recognition and Attendance Management System (FRAMS), the architecture must address several critical challenges: real-time processing of high-resolution video streams, secure storage of biometric data, and seamless communication between heterogeneous platforms (Desktop and Mobile). To achieve this, a modular, multi-tier architecture has been adopted. This separation of concerns ensures that the core face recognition logic (Edge System) is isolated from the reporting and administrative interfaces (Mobile Application), with a robust backend (Supabase) serving as the single source of truth and secure data orchestrator.
+
+Modular design is paramount in modern software engineering. By decomposing the system into discrete modules—Edge Processing, Backend Services, and Mobile Interface—the system achieves higher maintainability, scalability, and testability. Each module can be independently optimized, ensuring that the computational intensity of landmark extraction on the desktop does not interfere with the responsiveness of the administrative dashboard on mobile devices.
+
+5.2 HIGH-LEVEL SYSTEM ARCHITECTURE
+
+The FRAMS architecture follows a hybrid edge-cloud paradigm. The computational heavy-lifting of facial feature extraction occurs at the local edge (Desktop), while the long-term data persistence, relational modeling, and administrative access are delegated to the cloud-hosted backend and mobile endpoints.
+
+Figure 5.1: High-Level Architecture Diagram
+
++-----------------------------------------------------------+
+|                   REACT NATIVE MOBILE APP                 |
+|      (Admin/Teacher Dashboard, Reports, Management)       |
++----------------------------+------------------------------+
+                             |
+                             | Secure API (HTTPS/REST/WS)
+                             |
++----------------------------v------------------------------+
+|                   SUPABASE BACKEND CLOUD                  |
+|       (PostgreSQL, Authentication, RLS, Storage)          |
++----------------------------+------------------------------+
+                             |
+                             | Secure API (HTTPS/REST/WS)
+                             |
++----------------------------v------------------------------+
+|                    DESKTOP EDGE SYSTEM                    |
+|       (OpenCV Capture, MediaPipe Mesh, Vector Sync)       |
++-----------------------------------------------------------+
+
+High-Level Component Interaction:
+1. Desktop Edge System: Acts as the primary attendance logger. It captures live video, extracts biometric landmarks using MediaPipe, generates feature vectors, and performs local matches or pushes logs to the backend.
+2. Supabase Backend: This is the centralized hub. It manages user authentication via JWT, enforces data security through Row-Level Security (RLS) policies, and stores student/attendance records within a PostgreSQL database using JSONB for vector data.
+3. Mobile Application: Built with React Native, this module provides the interface for administrative oversight. It interacts directly with Supabase to fetch attendance statistics, manage student enrollments, and coordinate organizational structures (Branches/Classes).
+
+5.3 EDGE PROCESSING ARCHITECTURE
+
+The Edge Processing module is the core of the recognition pipeline. It is responsible for the transition from raw pixel data to high-dimensional mathematical representations (embeddings).
+
+Architectural Flow of Edge Processing:
+
+[ Video Capture ] -> [ Frame Pre-processing ] -> [ Face Detection ] 
+                                                         |
+                                                         v
+[ Attendance Log ] <- [ Cosine Similarity ] <- [ Landmark Extraction ]
+      |                      |                           |
+      v                      v                           v
+[ Supabase Update ]    [ Vector Normalization ] <- [ 468 XYZ Points ]
+
+The pipeline consists of the following stages:
+1. Video Capture: Utilizing OpenCV, the system accesses the local camera hardware to stream frames at a resolution optimized for feature extraction.
+2. MediaPipe FaceMesh: The system employs the MediaPipe FaceMesh model. Unlike traditional Haar Cascade models which are sensitive to lighting and orientation, FaceMesh provides a dense mapping of the face.
+3. Landmark Extraction: The model identifies 468 discrete 3D landmark points (x, y, z coordinates). This results in a raw input of 1404 individual values per face (468 points * 3 dimensions).
+4. Vector Normalization: To ensure the system is invariant to the distance of the user from the camera, the raw landmark coordinates are normalized relative to the inter-ocular distance and facial center. This creates a stable 1404-dimensional feature vector.
+5. Cosine Similarity: Detection is treated as a mathematical comparison problem rather than a classification problem. The captured 1404-dim vector is compared against stored reference vectors using Cosine Similarity.
+6. Attendance Trigger: If the similarity score exceeds a predefined threshold (calibrated for the specific environment), the system triggers an attendance event.
+
+5.4 BACKEND ARCHITECTURE
+
+The backend for FRAMS is built upon Supabase, an open-source Firebase alternative that provides a complete backend suite on top of PostgreSQL.
+
+Core Backend Components:
+1. PostgreSQL Database: The relational core of the system. It handles complex queries for branch-level and class-level attendance reports.
+2. JSONB Vector Storage: Instead of using specialized vector databases which might increase overhead for a local edge deployment, FRAMS utilizes the JSONB data type in PostgreSQL. The 1404-dimensional normalized feature vectors are stored as JSON arrays, allowing for flexible storage and retrieval while maintaining transactional integrity.
+3. Authentication Service: Supabase Auth handles user identity. It uses GoTrue for JWT-based token management, ensuring that every request to the database is authenticated.
+4. Row-Level Security (RLS): RLS is the primary security mechanism. It ensures that a teacher from 'Branch A' cannot view or modify the attendance data of 'Branch B'. This is enforced at the database level, preventing unauthorized access even if the application layer is compromised.
+
+5.5 MOBILE APPLICATION ARCHITECTURE
+
+The mobile application is designed as a secure, cross-platform client for administrators and faculty. It is built using React Native to ensure high performance and a native look and feel on both Android and iOS.
+
+Architectural Layers:
+1. User Interface (UI) Layer: Modular components organized by role (Admin vs. Teacher). It includes dashboards for real-time attendance monitoring and student management forms.
+2. Logic / State Management: Handles the application state, including active user sessions and cached attendance data.
+3. Supabase Integration Layer: Utilizing the Supabase-js client libraries to interact with the backend. It handles real-time subscriptions to attendance tables, allowing the dashboard to update automatically when a face is recognized at the edge.
+4. Role-Based Navigation: Navigation is strictly controlled by user roles obtained from the JWT claims, ensuring that administrative features are only visible to authorized personnel.
+
+5.6 DATA FLOW DESIGN
+
+The data flow diagrams (DFD) represent the movement of information within the system, from raw input to stored data and generated reports.
+
+Figure 5.2: DFD Level 0 (Context Diagram)
+
+                 +----------------------------+
+                 |           ADMIN            |
+                 +----+------------------^----+
+                      |                  |
+      Configuration   |                  | Attendance Reports
+      & Student Data  |                  |
+                 +----v------------------+----+
+                 |                            |
+                 |           FRAMS            |
+                 |      (CENTRAL SYSTEM)      |
+                 |                            |
+                 +----^------------------+----+
+                      |                  |
+   Face Landmarks /   |                  | Verification /
+   Attendance Logs    |                  | Notifications
+                 +----+------------------^----+
+                 |       DESKTOP EDGE         |
+                 +----------------------------+
+
+Figure 5.3: DFD Level 1 (Process Decomposition)
+
+       [ ADMIN ] ----(1)----> [ USER MGT ] <----> [ USERS DB ]
+                                 |
+       [ ADMIN ] ----(2)----> [ ORG MGT ]  <----> [ ORG DB ]
+                                 |
+       [ CAMERA ] ---(3)----> [ FACE RECO ] <---/ [ STUDENT DB ]
+                                 |             JSONB Vectors
+                                 v
+                             (4) [ ATTENDANCE LOGGING ]
+                                 |
+                                 v
+       [ MOBILE ] ---(5)----> [ REPORT GEN ] <--- [ ATTENDANCE DB ]
+
+Data Flow Processes:
+1. User Management: Admin registers teachers and managers.
+2. Organization Management: Definition of branches, classes, and schedules.
+3. Face Recognition: Edge process comparing live capture with stored JSONB feature vectors.
+4. Attendance Logging: Writing timestamped recognition events to the database.
+5. Report Generation: Mobile app aggregating logs into readable statistical formats.
+
+5.7 AUTHENTICATION AND SECURITY FLOW
+
+Security is implemented at every layer of the architecture, focusing on the protection of PII (Personally Identifiable Information) and biometric metadata.
+
+Figure 5.4: Authentication and Access Flow
+
+User (Mobile/Edge)  ---> [ Login Credentials ]
+                                |
+                                v
+Supabase Auth Service <--- [ Validate ]
+                                |
+                                v
+[ JWT Issued ]  <----------- [ Success ]
+       |
+       +-----> [ Request to Database ]
+                        |
+                        v
+PostgreSQL Engine <--- [ Inspect JWT Claims ]
+                        |
+                        v
+[ RLS POLICIES ] <---- [ Match Role/Branch ID ]
+                        |
+                        v
+[ DATA ACCESS ]  <---- [ AUTHORIZED? ]
+
+Access Control Mechanism:
+- Authentication: Users log in via email/password. Supabase returns a JSON Web Token (JWT).
+- Transport: All communication between modules occurs over TLS-encrypted channels (HTTPS).
+- Authorization: The JWT is passed in the header of every database request. PostgreSQL intercepts the request and applies RLS policies based on the `auth.uid()` and role claims within the token.
+- Vector Privacy: Biometric vectors are stored as mathematical abstractions (normalized landmarks) and cannot be "reversed" into an image of the face, providing an inherent layer of privacy.
+
+5.8 DEPLOYMENT ARCHITECTURE
+
+The deployment strategy leverages local edge hardware for low-latency recognition and cloud infrastructure for universal accessibility and data reliability.
+
+Figure 5.5: Deployment Diagram
+
+[ DESKTOP PC / LAPTOP ]
+(Local Edge Recognizer)
+       |
+       | TCP/IP (Internet)
+       |
+       v
++-------------------------------+
+|    SUPABASE CLOUD PLATFORM    |
+| (Managed Postgres + API Mesh) |
++---------------+---------------+
+                |
+                | TCP/IP (Internet/LTE)
+                |
+                v
+       [ MOBILE DEVICES ]
+       (Teacher/Admin App)
+
+Deployment Components:
+1. Local Node: A standard desktop or laptop PC equipped with a USB or integrated webcam. It runs the Python-based Edge Recognizer.
+2. Cloud Infrastructure: Supabase hosts the database and authentication services. This eliminates the need for managing on-premise servers.
+3. Mobile Endpoints: Smartphones running the React Native application, connecting via the public internet to the Supabase API Gateway.
+
+This architecture ensures that the Face Recognition and Attendance Management System is both robust in its local recognition capabilities and flexible in its administrative reach.

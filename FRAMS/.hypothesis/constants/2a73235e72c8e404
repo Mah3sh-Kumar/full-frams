@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\strictyaml\ruamel\scalarfloat.py
-# hypothesis_version: 6.148.7
-
-['ExponentialCapsFloat', 'ExponentialFloat', 'ScalarFloat', 'anchor', 'e_sign', 'e_width', 'exp', 'm_lead0', 'm_sign', 'prec', 'underscore', 'width']

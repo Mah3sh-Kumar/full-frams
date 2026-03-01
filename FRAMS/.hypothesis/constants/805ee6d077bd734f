@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\catalog\__init__.py
-# hypothesis_version: 6.148.7
-
-['.', '/', 'Catalog', 'EXTERNAL_TABLE', 'Loaded Catalog: %s', 'bigquery', 'botocore_session', 'dynamodb', 'glue', 'hive', 'http', 'iceberg', 'in-memory', 'location', 'manifest', 'manifest list', 'metadata', 'metadata_location', 'pa.Schema', 'postgresql', 'previous metadata', 'py-catalog-impl', 'rest', 'sql', 'sqlite', 'table_type', 'thrift', 'token', 'type', 'uri', 'warehouse']
