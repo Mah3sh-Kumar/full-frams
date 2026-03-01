@@ -10,6 +10,9 @@ import ProgressRing from '../../components/design-system/analytics/ProgressRing'
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { fetchStudentMetadata } from '../../lib/database';
+import { getSubjectsByClass } from '../../lib/subjects';
+import SubjectCard from '../../components/admin/subjects/SubjectCard';
+import { SubjectItem, TeacherInfo } from '../../lib/types';
 
 export default function StudentDashboard() {
     const navigation = useNavigation();
@@ -31,7 +34,9 @@ export default function StudentDashboard() {
         branch: '',
         academicYear: '',
         classLevel: '',
+        classId: '',
     });
+    const [subjects, setSubjects] = useState<(SubjectItem & { teachers: TeacherInfo[] })[]>([]);
 
     useEffect(() => {
         loadStats();
@@ -39,6 +44,13 @@ export default function StudentDashboard() {
         loadStudentMetadata();
         loadUpcomingEvents();
     }, []);
+
+    useEffect(() => {
+        // Load subjects when classId is available
+        if (metadata.classId) {
+            loadSubjects();
+        }
+    }, [metadata.classId]);
 
     const getGreeting = useCallback(() => {
         const hour = new Date().getHours();
@@ -49,9 +61,15 @@ export default function StudentDashboard() {
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        await Promise.all([loadStats(), loadStudentName(), loadStudentMetadata(), loadUpcomingEvents()]);
+        await Promise.all([
+            loadStats(), 
+            loadStudentName(), 
+            loadStudentMetadata(), 
+            loadUpcomingEvents(),
+            metadata.classId ? loadSubjects() : Promise.resolve()
+        ]);
         setRefreshing(false);
-    }, []);
+    }, [metadata.classId]);
 
     const loadStudentName = async () => {
         if (!session?.user?.id) return;
@@ -83,10 +101,30 @@ export default function StudentDashboard() {
                     branch: metadataRes.branch || 'Not assigned',
                     academicYear: metadataRes.academicYear || 'Not assigned',
                     classLevel: metadataRes.classLevel || 'Not assigned',
+                    classId: metadataRes.classId || '',
                 });
             }
         } catch (err) {
             console.error('Error loading student metadata:', err);
+        }
+    };
+
+    const loadSubjects = async () => {
+        if (!metadata.classId) return;
+
+        try {
+            const { data, error } = await getSubjectsByClass(metadata.classId);
+            
+            if (error) {
+                console.error('Error loading subjects:', error);
+                return;
+            }
+
+            if (data) {
+                setSubjects(data);
+            }
+        } catch (err) {
+            console.error('Error loading subjects:', err);
         }
     };
 
@@ -383,6 +421,22 @@ export default function StudentDashboard() {
 
                 {/* Upcoming Events Section */}
                 {upcomingEventsDisplay}
+
+                {/* My Subjects Section */}
+                {subjects.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: getTextColor() }]}>My Subjects</Text>
+                        {subjects.map((subject) => (
+                            <SubjectCard
+                                key={subject.id}
+                                subject={subject}
+                                onEdit={() => {}}
+                                onDelete={() => {}}
+                                showActions={false}
+                            />
+                        ))}
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );

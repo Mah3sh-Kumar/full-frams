@@ -204,8 +204,8 @@ function Navigation() {
 
             {/* Common Screens */}
             <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Notifications" component={NotificationsScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy' }} />
             <Stack.Screen name="Terms" component={TermsScreen} options={{ title: 'Terms of Service' }} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: 'Change Password' }} />
@@ -232,7 +232,7 @@ function Navigation() {
               <>
                 <Stack.Screen name="UserManagement" component={UserManagement} options={{ headerShown: false }} />
                 <Stack.Screen name="OrganizationManager" component={OrganizationManager} options={{ headerShown: false }} />
-                <Stack.Screen name="AuditLogs" component={AuditLogsScreen} options={{ title: 'Audit Logs' }} />
+                <Stack.Screen name="AuditLogs" component={AuditLogsScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="VerificationDashboard" component={VerificationDashboard} options={{ title: 'User Verification' }} />
                 <Stack.Screen name="Reports" component={ReportsScreen} options={{ headerShown: false }} />
               </>

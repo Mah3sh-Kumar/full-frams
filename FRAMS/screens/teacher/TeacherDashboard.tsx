@@ -8,6 +8,9 @@ import LoadingSpinner from '../../components/design-system/feedback/LoadingSpinn
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { fetchTeacherMetadata } from '../../lib/database';
+import { getSubjectsByTeacher } from '../../lib/subjects';
+import SubjectCard from '../../components/admin/subjects/SubjectCard';
+import { SubjectItem, TeacherInfo } from '../../lib/types';
 
 export default function TeacherDashboard() {
     const navigation = useNavigation();
@@ -24,6 +27,7 @@ export default function TeacherDashboard() {
     const [metadata, setMetadata] = useState({
         department: '',
     });
+    const [subjects, setSubjects] = useState<(SubjectItem & { teachers: TeacherInfo[] })[]>([]);
 
     useEffect(() => {
         loadData();
@@ -67,15 +71,23 @@ export default function TeacherDashboard() {
                 });
             }
 
-            // Load Subjects (to get classes)
-            const { data: subjects } = await supabase
+            // Load Subjects assigned to this teacher
+            const { data: subjectsData, error: subjectsError } = await getSubjectsByTeacher(session.user.id);
+            if (subjectsError) {
+                console.error('Error loading subjects:', subjectsError);
+            } else if (subjectsData) {
+                setSubjects(subjectsData);
+            }
+
+            // Load Subjects (to get classes) - using old query for stats
+            const { data: subjectsForStats } = await supabase
                 .from('subjects')
                 .select('id, class_id')
                 .eq('teacher_id', session.user.id);
 
-            if (subjects) {
-                const uniqueClassIds = [...new Set(subjects.map(s => s.class_id).filter(Boolean))];
-                const subjectIds = subjects.map(s => s.id);
+            if (subjectsForStats) {
+                const uniqueClassIds = [...new Set(subjectsForStats.map(s => s.class_id).filter(Boolean))];
+                const subjectIds = subjectsForStats.map(s => s.id);
 
                 // 1. Total Classes
                 const totalClasses = uniqueClassIds.length;
@@ -271,6 +283,29 @@ export default function TeacherDashboard() {
                         <Text style={[styles.statValue, { color: getTextColor() }]}>{stats.pendingReviews}</Text>
                     </View>
                 </View>
+
+                {/* My Subjects Section */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: getTextColor() }]}>My Subjects</Text>
+                    {subjects.length === 0 ? (
+                        <View style={[styles.emptyState, { backgroundColor: getSurfaceColor() }]}>
+                            <Ionicons name="book-outline" size={48} color={getTextSecondaryColor()} />
+                            <Text style={[styles.emptyStateText, { color: getTextSecondaryColor() }]}>
+                                No subjects assigned yet
+                            </Text>
+                        </View>
+                    ) : (
+                        subjects.map((subject) => (
+                            <SubjectCard
+                                key={subject.id}
+                                subject={subject}
+                                onEdit={() => {}}
+                                onDelete={() => {}}
+                                showActions={false}
+                            />
+                        ))
+                    )}
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -419,5 +454,21 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 36,
         fontWeight: '700',
+    },
+    emptyState: {
+        borderRadius: 16,
+        padding: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    emptyStateText: {
+        fontSize: 16,
+        marginTop: 12,
+        textAlign: 'center',
     },
 });

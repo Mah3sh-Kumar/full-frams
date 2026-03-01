@@ -49,8 +49,9 @@ export interface HeatmapChartProps {
  * - Weekly attendance heatmap visualization
  * - Color-coded cells based on attendance percentage
  * - Responsive layout with design tokens
- * - Spacing: 4px gap between cells (xs token)
- * - Border radius: 8px (small token)
+ * - Spacing: 6px gap between cells
+ * - Border radius: 6px
+ * - Enhanced visual design with shadows and labels
  * 
  * Requirements:
  * - 8.2: Weekly attendance data heatmap visualization
@@ -61,13 +62,13 @@ export default function HeatmapChart({
   style,
   testID,
   showDayLabels = true,
-  showWeekLabels = false,
+  showWeekLabels = true,
 }: HeatmapChartProps) {
   const { tokens, mode } = useTheme();
 
-  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const cellSize = 32;
-  const cellGap = tokens.spacing.xs;
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const cellSize = 36;
+  const cellGap = 6;
 
   /**
    * Get color for a cell based on attendance value
@@ -76,11 +77,11 @@ export default function HeatmapChart({
     if (value >= 90) {
       return tokens.colors.success.main;
     } else if (value >= 75) {
-      return tokens.colors.success.light;
+      return '#86EFAC'; // Light green
     } else if (value >= 60) {
       return tokens.colors.warning.main;
     } else if (value >= 40) {
-      return tokens.colors.warning.light;
+      return '#FCD34D'; // Light yellow
     } else if (value > 0) {
       return tokens.colors.error.main;
     } else {
@@ -127,39 +128,87 @@ export default function HeatmapChart({
   }
 
   const containerStyle: ViewStyle = {
-    flexDirection: 'row',
+    paddingVertical: tokens.spacing.sm,
   };
 
   const dayLabelsContainerStyle: ViewStyle = {
-    marginRight: tokens.spacing.sm,
-    justifyContent: 'space-between',
+    flexDirection: 'row',
+    marginBottom: tokens.spacing.sm,
+    paddingLeft: showWeekLabels ? 36 : 0,
   };
 
   const dayLabelStyle: TextStyle = {
-    fontSize: tokens.typography.caption.fontSize,
+    fontSize: 11,
+    fontWeight: '600',
     color: mode === 'dark'
       ? tokens.colors.theme.dark.textSecondary
       : tokens.colors.theme.light.textSecondary,
-    height: cellSize,
-    lineHeight: cellSize,
+    width: cellSize,
     textAlign: 'center',
+    marginRight: cellGap,
   };
 
   const heatmapGridStyle: ViewStyle = {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: cellGap,
   };
 
-  const weekColumnStyle: ViewStyle = {
+  const weekRowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: cellGap,
+  };
+
+  const weekLabelStyle: TextStyle = {
+    fontSize: 10,
+    fontWeight: '600',
+    color: mode === 'dark'
+      ? tokens.colors.theme.dark.textSecondary
+      : tokens.colors.theme.light.textSecondary,
+    width: 26,
+    textAlign: 'right',
+    marginRight: 8,
   };
 
   const cellStyle = (value: number): ViewStyle => ({
     width: cellSize,
     height: cellSize,
     backgroundColor: getCellColor(value),
-    borderRadius: tokens.borders.radius.small,
+    borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   });
+
+  const legendContainerStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: tokens.spacing.md,
+    gap: tokens.spacing.sm,
+  };
+
+  const legendItemStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  };
+
+  const legendBoxStyle = (color: string): ViewStyle => ({
+    width: 16,
+    height: 16,
+    backgroundColor: color,
+    borderRadius: 4,
+  });
+
+  const legendTextStyle: TextStyle = {
+    fontSize: 11,
+    color: mode === 'dark'
+      ? tokens.colors.theme.dark.textSecondary
+      : tokens.colors.theme.light.textSecondary,
+  };
 
   return (
     <View style={[containerStyle, style]} testID={testID}>
@@ -175,7 +224,10 @@ export default function HeatmapChart({
       
       <View style={heatmapGridStyle}>
         {Array.from({ length: weeks }).map((_, weekIndex) => (
-          <View key={`week-${weekIndex}`} style={weekColumnStyle}>
+          <View key={`week-${weekIndex}`} style={weekRowStyle}>
+            {showWeekLabels && (
+              <Text style={weekLabelStyle}>W{weeks - weekIndex}</Text>
+            )}
             {Array.from({ length: 7 }).map((_, dayIndex) => {
               const dataPoint = getDataPoint(dayIndex, weekIndex);
               const value = dataPoint?.value || 0;
@@ -190,6 +242,30 @@ export default function HeatmapChart({
             })}
           </View>
         ))}
+      </View>
+
+      {/* Legend */}
+      <View style={legendContainerStyle}>
+        <View style={legendItemStyle}>
+          <View style={legendBoxStyle(tokens.colors.success.main)} />
+          <Text style={legendTextStyle}>90%+</Text>
+        </View>
+        <View style={legendItemStyle}>
+          <View style={legendBoxStyle('#86EFAC')} />
+          <Text style={legendTextStyle}>75-89%</Text>
+        </View>
+        <View style={legendItemStyle}>
+          <View style={legendBoxStyle(tokens.colors.warning.main)} />
+          <Text style={legendTextStyle}>60-74%</Text>
+        </View>
+        <View style={legendItemStyle}>
+          <View style={legendBoxStyle('#FCD34D')} />
+          <Text style={legendTextStyle}>40-59%</Text>
+        </View>
+        <View style={legendItemStyle}>
+          <View style={legendBoxStyle(tokens.colors.error.main)} />
+          <Text style={legendTextStyle}>&lt;40%</Text>
+        </View>
       </View>
     </View>
   );

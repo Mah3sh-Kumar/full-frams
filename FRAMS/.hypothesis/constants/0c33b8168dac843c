@@ -1,4 +1,0 @@
-# file: E:\SEM_6_project\FRAMS\FaceRecognition\src\logger.py
-# hypothesis_version: 6.148.7
-
-[1024, '%H:%M:%S', '%Y-%m-%d %H:%M:%S', 'INFO', 'PIL', 'attendance.log', 'errors.log', 'httpx', 'log_level', 'logger_setup', 'logs', 'matplotlib', 'requests', 'supabase', 'system', 'urllib3', 'utf-8']

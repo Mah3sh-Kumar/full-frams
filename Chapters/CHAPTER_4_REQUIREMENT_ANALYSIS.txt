@@ -1,0 +1,320 @@
+----------------------------------------
+FILE: CHAPTER_4_REQUIREMENT_ANALYSIS.txt
+----------------------------------------
+
+CHAPTER 4
+REQUIREMENT ANALYSIS
+
+4.1 Introduction
+
+Requirement analysis is a fundamental SDLC phase that establishes a baseline for the entire engineering effort. It involves discovering, analyzing, documenting, and validating the needs of stakeholders associated with the system. For FRAMS, this is critical due to the hybrid architecture spanning local edge processing, cloud data persistence, and mobile interfaces.
+
+The primary purpose of requirement analysis in this project is to translate the high-level institutional goal—automating attendance—into a set of precise technical specifications. This ensures that the developed system is not only functionally accurate but also operationally feasible within the constraints of an academic environment. By clearly defining what the system must do (functional requirements) and how it must perform (non-functional requirements), the analysis reduces the risk of architectural drift and ensures that the final product remains aligned with the needs of students, faculty, and administrators.
+
+In the context of an AI-enabled system like FRAMS, requirement analysis also serves as a risk mitigation strategy. It defines the boundaries of the biometric processing, specifies the handled data types (such as 1404-dimensional feature vectors), and outlines the expected environmental conditions (such as lighting and camera orientation). This level of detail is essential for ensuring system reliability and for maintaining a high degree of confidence in the automated attendance records. Without a rigorous analysis of requirements, a complex multi-layered system would likely suffer from synchronization bottlenecks, security vulnerabilities, or poor recognition accuracy in real-world settings.
+
+4.2 Stakeholder Identification
+
+The success of FRAMS depends on its ability to satisfy the diverse needs of several key stakeholder groups. Each group interacts with the system through different interfaces and has distinct expectations regarding data visibility and operational control.
+
+1. Students:
+Students are the primary subjects of the recognition engine. Their core requirement is a friction-less experience where attendance is marked passively without requiring active intervention or physical contact. Furthermore, they require a transparent and real-time interface to view their attendance history and track their eligibility for examinations. Accuracy is their highest priority to ensure that their presence is never missed, which could lead to administrative penalties.
+
+2. Faculty:
+Faculty members (Teachers) are the primary users of the management interface. They require a stable platform to initiate attendance sessions, verify the records captured by the edge system, and generate reports for their specific classes. For faculty, the system must provide a significant reduction in the time spent on administrative tasks while maintaining the integrity of the data to prevent proxy attendance or unearned presence markings.
+
+3. Administrators:
+Institutional administrators oversee the system at a macro level. They are responsible for managing the organizational structure, including branches, classes, and student enrollments. They require a centralized dashboard to monitor overall institutional attendance trends, manage user permissions, and ensure that the backend remains synchronized across all campus locations. Their focus is on data integrity, role-based security, and cross-departmental reporting.
+
+4. IT Support Staff:
+The IT support team is responsible for the deployment and maintenance of the hardware and software infrastructure. They require detailed logging, easy-to-use troubleshooting interfaces at the edge node, and a stable deployment process for the desktop edge applications and mobile binaries. Their requirements center on system maintainability, hardware compatibility, and network synchronization reliability.
+
+5. System Developers:
+The developers (the project team) are responsible for implementing the technical specifications and ensuring the architectural integrity of the system. Their requirements involve the availability of stable, high-performance libraries such as MediaPipe for landmark extraction and OpenCV for digital signal processing. They require a robust Backend-as-a-Service (BaaS) through Supabase to handle the high density of relational data without the overhead of server management. Developers are focused on achieving rigorous technical benchmarks, including sub-second recognition latency, high-precision landmark mapping (the 468 landmark mesh), and stable synchronization between the Python edge environment and the PostgreSQL cloud layer. Their perspective is rooted in the "Offline-First" philosophy, necessitating requirements for local state management and robust conflict resolution during data push cycles.
+
+4.3 Functional Requirements
+
+Functional requirements define the core activities that the system must perform. In the case of FRAMS, these are categorized based on the different operational modules: Edge Processing, Backend Management, and Mobile Interface.
+
+4.3.1 User Authentication Requirements
+
+The system must implement a multi-role authentication framework to ensure that only authorized individuals can access sensitive institutional data.
+
+FR-1: Secure Login Interface
+The mobile application shall provide a secure login screen requiring a verified email/username and password. The system must authenticate users against the Supabase Auth service.
+
+FR-2: Role-Based Dashboard Redirection
+Upon successful authentication, the system shall identify the user's role (Student, Teacher, or Admin) and redirect them to the appropriate dashboard with specific feature sets.
+
+FR-3: Secure Edge Node Authentication
+The Local Edge Processing System (Desktop application) must require a one-time administrative login or a secure API token to establish a connection with the Supabase cloud backend.
+
+FR-4: Session Persistence
+The mobile application shall support persistent login sessions using JSON Web Tokens (JWT), ensuring that users do not need to re-authenticate every time the application is opened.
+
+4.3.2 Face Enrollment Requirements
+
+Enrollment creates the digital identity for each student.
+
+FR-5: Landmark Extraction
+The enrollment module shall utilize MediaPipe FaceMesh to extract 468 facial landmarks from a frontal view of the student.
+
+FR-6: 1404-Dimensional Vector Generation
+The system shall convert the (x, y, z) coordinates of the 468 landmarks into a normalized 1404-dimensional feature vector.
+
+FR-7: JSONB Data Storage
+The generated feature vector shall be stored in the Supabase database using the JSONB data type, linked to the student's unique enrollment ID.
+
+FR-8: Enrollment Data Validation
+The system shall verify that the extracted feature vector is unique and consistent before confirming the student's enrollment to prevent duplicate or low-quality registrations.
+
+4.3.3 Attendance Marking Requirements
+
+This is the core functional logic of the recognition engine running at the local edge.
+
+FR-9: Real-Time Frame Capture
+The Edge Processing System shall capture video frames from the HD camera module at a rate sufficient to maintain smooth real-time monitoring.
+
+FR-10: Automated Face Detection
+The system shall automatically detect human faces within the video stream and isolate the region of interest for landmark extraction.
+
+FR-11: High-Speed Similarity Matching
+The system shall compare the real-time feature vector against the cached student encodings using Cosine Similarity math.
+
+FR-12: Threshold-Based Recognition
+Attendance shall be marked only when the similarity score exceeds a configurable administrative threshold (typically 0.6 or higher) to minimize false positives.
+
+FR-13: Duplicate Entry Prevention
+The system must prevent multiple attendance entries for the same student within a single session by checking against existing records for the current timestamp.
+
+4.3.4 Data Synchronization Requirements
+
+Synchronization ensures that the local edge events are reflected in the global cloud database.
+
+FR-14: Real-Time Cloud Push
+The Edge System shall push attendance logs to the Supabase backend immediately upon successful recognition, provided a network connection is available.
+
+FR-15: Offline Buffering Mechanism
+In the event of network failure, the Edge System shall store attendance entries in a local buffer and synchronize them automatically once connectivity is restored.
+
+FR-16: Conflict Resolution
+The system shall handle potential conflicts during synchronization by prioritizing timestamps to ensure the accuracy of the historical record.
+
+4.3.5 Role-Based Access Requirements
+
+Role-based access control (RBAC) is the primary security mechanism governing data visibility and operational permissions within the FRAMS ecosystem.
+
+FR-17: Data Isolation for Students
+The system shall ensure that students can only view their own attendance logs and personal profile information. This isolation must be enforced both at the application level (React Native logic) and at the database level using Supabase Row Level Security (RLS) policies.
+
+FR-18: Class Management for Teachers
+Teachers shall be empowered to view and manage attendance records for the specific classes, subjects, and academic sessions assigned to them. They must have the permission to "Initiate" an edge recognition session and "Finalize" the attendance log before it is officially committed to the institutional record.
+
+FR-19: Institutional Oversight for Admins
+Administrators shall have full read-write access to institutional metadata. This includes the high-level management of the organization structure, such as adding or removing departments (Branches), defining class schedules, and overseeing the global student enrollment directory.
+
+FR-20: Technical Configuration for IT Support
+The system shall provide a dedicated configuration mode for IT staff, allowing them to calibrate camera settings (exposure, resolution), update edge-to-cloud synchronization parameters, and review system logs for troubleshooting without accessing sensitive student biometric data.
+
+4.3.6 Reporting and Dashboard Requirements
+
+FR-20: Percentage-Based Visibility
+The student dashboard shall display a graphical representation of the student's attendance percentage across different modules.
+
+FR-21: Exportable Attendance Reports
+The management interface (Teacher/Admin) shall provide the functionality to export attendance data into standardized formats (such as CSV) for official institutional use.
+
+FR-22: Real-Time Session Status
+The system shall provide a real-time status update to the teacher during an active recognition session, showing the count of students currently present.
+
+4.4 Non-Functional Requirements
+
+Non-functional requirements describe the quality attributes and constraints that the system must operate under to ensure a professional user experience and institutional stability.
+
+4.4.1 Performance Requirements
+
+NFR-1: Sub-Second Recognition Latency
+The system must be optimized to perform the landmark extraction and vector comparison within less than one second under standard classroom conditions.
+
+NFR-2: UI Responsiveness
+The mobile application shall render dashboard updates and transitions within 200 milliseconds to maintain a fluid user experience.
+
+NFR-3: Synchronization Window
+Attendance marks captured at the edge should reflect in the cloud-synced mobile dashboard within 5 seconds under a standard broadband connection.
+
+4.4.2 Security Requirements
+
+NFR-4: Biometric Data Privacy
+The system shall never store raw facial images in the cloud. Only the mathematical feature vectors (which are one-way encodings) shall be persisted.
+
+NFR-5: Database Row Level Security (RLS)
+The Supabase backend must implement RLS policies to enforce at the database level that no user can access data outside their authorized role.
+
+NFR-6: API Authentication
+All communications between the Edge node, Mobile app, and Cloud backend must be authenticated using secure JWT tokens.
+
+4.4.3 Reliability Requirements
+
+NFR-7: System Uptime
+The edge processing system must be designed for continuous operation during the institutional working hours without memory leaks or application crashes.
+
+NFR-8: Data Persistence Integrity
+The system must ensure that no attendance records are lost during power failures or network drops by utilizing persistent local storage for the buffer.
+
+4.4.4 Usability Requirements
+
+NFR-9: Intuitive Navigation
+The mobile application shall follow a standard hierarchical navigation structure, ensuring that users can reach critical information within three interactions.
+
+NFR-10: Adaptive Design
+The mobile interface must be responsive and adapt gracefully to varying screen sizes and orientations across different smartphone models.
+
+4.4.5 Scalability Requirements
+
+NFR-11: Multi-Branch Support
+The database schema and synchronization logic must support the concurrent operation of multiple edge nodes across different branches of the institution.
+
+NFR-12: High-Volume Data Handling
+The system should be capable of handling peak loads, such as the simultaneous login of hundreds of students following a morning lecture.
+
+4.4.6 Maintainability Requirements
+
+NFR-13: Modular Architecture
+The codebase must be structured into independent modules (Recognition, Sync, UI, Auth) to facilitate easier debugging and future feature updates.
+
+NFR-14: Standardized Environment
+The system must rely on well-documented environments (Python virtual environments) to ensure the software can be redeployed without significant reconfiguration.
+
+4.5 Hardware Requirements
+
+The physical deployment of FRAMS requires a stable hardware environment to support real-time computer vision processing.
+
+4.5.1 Minimum Deployment Hardware (Edge Node)
+- Processor: Multi-core CPU (Intel Core i5 / AMD Ryzen 5 or equivalent).
+- RAM: 8GB minimum (to handle real-time frame buffers and OS overhead).
+- Storage: 128GB SSD (for fast application load and local buffering).
+- Graphics: Integrated graphics capable of handling basic video rendering.
+
+4.5.2 Recommended Development Hardware
+- Processor: High-performance multi-core CPU (Intel Core i7 / AMD Ryzen 7 or equivalent).
+- RAM: 16GB (to support simultaneous mobile bundle compilation, database management, and Python execution).
+- Storage: 512GB NVMe SSD.
+
+4.5.3 Camera Requirements
+- Resolution: HD (720p) minimum; Full HD (1080p) recommended for improved landmark precision at a distance.
+- Interface: USB 2.0/3.0 or integrated laptop camera.
+- Frame Rate: Stable 30 FPS to ensure smooth face tracking.
+
+4.5.4 Network Requirements
+- Type: Wi-Fi or Wired Broadband connection.
+- Speed: 2 Mbps minimum upload/download for reliable cloud synchronization.
+- Stability: System designed to handle intermittent latency but requires a connection for real-time reporting.
+
+4.6 Software Requirements
+
+The software stack is chosen for its cross-platform compatibility and high-performance AI integration.
+
+4.6.1 Development Environment
+- Operating System: Windows 10/11, Linux (Ubuntu 20.04+), or macOS.
+- Python Environment: Python 3.9 through 3.11 for compatibility with MediaPipe and PySide6.
+- Package Management: pip with virtualenv or conda.
+
+4.6.2 Core Libraries and Frameworks
+- MediaPipe: For high-precision face landmark extraction and mesh generation.
+- OpenCV: For video stream handling, image pre-processing, and frame manipulation.
+- NumPy: For high-speed mathematical operations on feature vectors.
+- PySide6: For the development of the Desktop GUI for the edge node.
+- React Native: For building the cross-platform mobile application.
+
+4.6.3 Backend and Cloud
+- Supabase: Used as the primary Backend-as-a-Service, providing PostgreSQL, RLS, and Authentication.
+- PostgreSQL: The relational database engine serving as the core persistence layer.
+
+4.7 Use Case Analysis
+
+The following analysis outlines the interactions between the stakeholders and the system.
+
+Figure 4.1: Use Case Diagram
+
++-----------------------------------------------------------+
+|                                                           |
+|       +-------------------------------------------+       |
+|       |         FRAMS SYSTEM BOUNDARY             |       |
+|       +-------------------------------------------+       |
+|                                                           |
+|  +---------+                                 +---------+  |
+|  | STUDENT |                                 | TEACHER |  |
+|  +---------+                                 +---------+  |
+|       |                                           |       |
+|       |        +-------------------------+        |       |
+|       +------> |   Login to Dashboard    | <------+       |
+|       |        +-------------------------+        |       |
+|       |                                           |       |
+|       |        +-------------------------+        |       |
+|       +------> | View Attendance History |        |       |
+|       |        +-------------------------+        |       |
+|       |                                           |       |
+|       |        +-------------------------+        |       |
+|       |        |   Initiate Attendance   | <------+       |
+|       |        +-------------------------+        |       |
+|       |                                           |       |
+|       |        +-------------------------+        |       |
+|       |        | Verify Captured Data    | <------+       |
+|       |        +-------------------------+        |       |
+|       |                                           |       |
+|  +---------+   +-------------------------+   +---------+  |
+|  |  ADMIN  |   |    Manage Institution   |   | IT STAFF|  |
+|  +---------+   +-------------------------+   +---------+  |
+|       |                    ^                      |       |
+|       |                    |                      |       |
+|       +--------------------+----------------------+       |
+|                                                           |
++-----------------------------------------------------------+
+
+Explanation of Use Cases:
+
+1. Login to Dashboard:
+Common to all roles. Users authenticate via the mobile app to enter their respective environments.
+
+2. View Attendance History:
+Primarily for students to monitor their presence percentage and for teachers to review past class logs.
+
+3. Initiate Attendance:
+A teacher-specific use case where a recognition session is started on the edge system for a particular lecture.
+
+4. Verify Captured Data:
+Teachers review the attendance marks in real-time or post-session to ensure accuracy.
+
+5. Manage Institution:
+An administrative use case involving the configuration of departments, branches, and the global student database.
+
+6. Configure Edge Node:
+An IT-support function where the local recognition environment is calibrated and connected to the institutional network.
+
+4.8 Requirement Traceability Matrix
+
+The traceability matrix ensures that every requirement identified during the analysis phase is mapped to a specific implementation module, ensuring 100% coverage of the system's needs.
+
+Figure 4.2: Requirement Traceability Matrix
+
++-----------+----------------------+------------------+
+| Req ID    | Description          | Implemented In   |
++-----------+----------------------+------------------+
+| FR-1-4    | User Authentication  | Supabase Auth    |
++-----------+----------------------+------------------+
+| FR-5-8    | Face Enrollment      | Edge Module (Py) |
++-----------+----------------------+------------------+
+| FR-9-13   | Attendance Marking   | Recognition Core |
++-----------+----------------------+------------------+
+| FR-14-16  | Data Synchronization | Sync Bridge      |
++-----------+----------------------+------------------+
+| FR-17-19  | Role Access Control  | Database (RLS)   |
++-----------+----------------------+------------------+
+| FR-20-22  | Reports & Dashboards | React Native App |
++-----------+----------------------+------------------+
+| NFR-1-3   | Performance Targets  | Algorithm Opt.   |
++-----------+----------------------+------------------+
+| NFR-4-6   | Security Standards   | Encryption/RLS   |
++-----------+----------------------+------------------+
+
+The Requirement Traceability Matrix is essential for the verification phase of the SDLC. It allows the development team to verify that every functional and non-functional requirement has been addressed in the code. Furthermore, it assists in impact analysis; if a requirement changes, the matrix clearly shows which software modules will need modification. In a complex system like FRAMS, where the edge and cloud are tightly coupled, maintaining this mapping prevents gaps in the system's logic and ensures that the final delivery meets the institutional requirements defined at the project's inception.

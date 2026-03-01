@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\catalog\rest\auth.py
-# hypothesis_version: 6.148.7
-
-[400, 401, '.', ':', 'AuthManager', 'Authorization', 'Content-type', 'access_token', 'basic', 'client_credentials', 'client_id', 'client_secret', 'expires_in', 'google', 'grant_type', 'legacyoauth2', 'noop', 'oauth2', 'scope', 'utf-8']

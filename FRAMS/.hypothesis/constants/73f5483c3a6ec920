@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\pyiceberg\avro\file.py
-# hypothesis_version: 6.148.7
-
-[b'Obj', 100, 200, 201, 202, 300, 'D', 'avro.schema', 'block', 'decoder', 'header', 'input_file', 'magic', 'meta', 'read_enums', 'read_schema', 'read_types', 'reader', 'schema', 'sync']

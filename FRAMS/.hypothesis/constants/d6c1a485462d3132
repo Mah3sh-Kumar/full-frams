@@ -1,4 +1,0 @@
-# file: C:\Users\mahes\AppData\Roaming\Python\Python310\site-packages\realtime\_async\channel.py
-# hypothesis_version: 6.148.7
-
-['access_token', 'ack', 'broadcast', 'config', 'enabled', 'event', 'key', 'ok', 'payload', 'postgres_changes', 'presence', 'private', 'self', 'track', 'type', 'untrack']

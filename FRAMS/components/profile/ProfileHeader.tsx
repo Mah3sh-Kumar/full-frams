@@ -30,14 +30,11 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <ImagePickerComponent
                     currentImageUrl={avatarUrl}
                     onImageSelected={onImageSelected}
-                    size={120}
+                    size={100}
                 />
             </View>
             <Text style={[styles.name, { color: contrastColor }]} accessibilityRole="header">
                 {fullName}
-            </Text>
-            <Text style={[styles.roleText, { color: contrastColor + 'F2' }]}>
-                {role?.toUpperCase()}
             </Text>
             {editing && (
                 <View style={[styles.editBadge, { backgroundColor: tokens.colors.warning.main }]}>
@@ -49,17 +46,22 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
     header: {
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 50 : 15,
-        paddingBottom: 25,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
-        elevation: 5,
+        paddingHorizontal: 26,
+        paddingTop: Platform.OS === 'ios' ? 50 : 35,
+        paddingBottom: 4,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
     },
     screenTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: '700',
         marginBottom: 16,
         letterSpacing: 0.5,
@@ -67,17 +69,18 @@ const styles = StyleSheet.create({
     avatarContainer: {
         marginBottom: 12,
         elevation: 10,
-        borderRadius: 60,
+        borderRadius: 50,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowRadius: 10,
     },
     name: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: '700',
         marginBottom: 4,
         textAlign: 'center',
+        letterSpacing: 0.3,
     },
     roleText: {
         fontSize: 12,
@@ -85,15 +88,16 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     editBadge: {
-        marginTop: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
+        marginTop: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 16,
+        elevation: 2,
     },
     editBadgeText: {
         color: '#FFFFFF',
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: '700',
-        letterSpacing: 1,
+        letterSpacing: 1.2,
     },
 });
