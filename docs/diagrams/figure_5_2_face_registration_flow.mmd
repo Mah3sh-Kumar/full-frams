@@ -1,0 +1,109 @@
+%% Figure 5.2: Face Registration Flow
+%% Shows the process of registering a student's face in the system
+
+graph TB
+    Start([Start Registration])
+    style Start fill:#4CAF50,stroke:#2E7D32,stroke-width:2px
+    
+    End([Registration Complete])
+    style End fill:#4CAF50,stroke:#2E7D32,stroke-width:2px
+    
+    %% Input Phase
+    A1["Teacher Enters<br/>Student Details<br/>(Name, ID, Class)"]
+    style A1 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    A2["Validate<br/>Student Information"]
+    style A2 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    D1{Valid<br/>Details?}
+    style D1 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    E1["Display Error:<br/>Invalid Information"]
+    style E1 fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+    
+    %% Camera Phase
+    A3["Activate Camera"]
+    style A3 fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    
+    A4["Capture Face Image"]
+    style A4 fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    
+    A5["Detect Face<br/>in Image"]
+    style A5 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    D2{Face<br/>Detected?}
+    style D2 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    E2["Display:<br/>No Face Detected<br/>Please Retry"]
+    style E2 fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+    
+    %% Quality Check Phase
+    A6["Check Image<br/>Quality<br/>(Lighting, Clarity, Position)"]
+    style A6 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    D3{Quality<br/>Acceptable?}
+    style D3 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    E3["Display:<br/>Poor Quality<br/>Please Retry"]
+    style E3 fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+    
+    %% Processing Phase
+    A7["Extract Facial<br/>Features<br/>(Landmark Detection)"]
+    style A7 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    A8["Generate Face<br/>Encoding Vector"]
+    style A8 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    A9["Encrypt Face Data"]
+    style A9 fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    
+    %% Storage Phase
+    A10["Store in Database<br/>(Student Record + Face Data)"]
+    style A10 fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    
+    D4{Storage<br/>Successful?}
+    style D4 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    E4["Display Error:<br/>Database Error<br/>Please Retry"]
+    style E4 fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+    
+    %% Confirmation Phase
+    A11["Display Success<br/>Message"]
+    style A11 fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    
+    A12["Update Student<br/>Status to Active"]
+    style A12 fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    
+    %% Flow
+    Start --> A1
+    A1 --> A2
+    A2 --> D1
+    
+    D1 -->|Yes| A3
+    D1 -->|No| E1
+    E1 --> A1
+    
+    A3 --> A4
+    A4 --> A5
+    A5 --> D2
+    
+    D2 -->|Yes| A6
+    D2 -->|No| E2
+    E2 --> A4
+    
+    A6 --> D3
+    D3 -->|Yes| A7
+    D3 -->|No| E3
+    E3 --> A4
+    
+    A7 --> A8
+    A8 --> A9
+    A9 --> A10
+    A10 --> D4
+    
+    D4 -->|Yes| A11
+    D4 -->|No| E4
+    E4 --> A10
+    
+    A11 --> A12
+    A12 --> End

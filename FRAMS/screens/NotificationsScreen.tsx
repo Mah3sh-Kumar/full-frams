@@ -17,6 +17,7 @@ import Button from '../components/design-system/primitives/Button';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
 import type { StackScreenProps } from '@react-navigation/stack';
+import { ActionButton } from '../components/common/ActionButtons';
 
 type Props = StackScreenProps<any, 'Notifications'>;
 
@@ -178,13 +179,13 @@ export default function NotificationsScreen({ navigation }: Props) {
                             <Text style={[styles.message, { color: getTextSecondaryColor() }]}>{item.message}</Text>
                             <View style={styles.footer}>
                                 <Text style={[styles.date, { color: tokens.colors.neutral.gray500 }]}>{formatDate(item.created_at)}</Text>
-                                <TouchableOpacity
+                                <ActionButton
+                                    type="delete"
                                     onPress={() => handleDelete(item.id)}
-                                    style={styles.deleteButton}
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                    <Ionicons name="trash-outline" size={20} color={tokens.colors.error.main} />
-                                </TouchableOpacity>
+                                    accessibilityLabel="Delete notification"
+                                    size={20}
+                                    style={{ width: 32, height: 32, borderRadius: 16 }}
+                                />
                             </View>
                         </View>
                     </View>

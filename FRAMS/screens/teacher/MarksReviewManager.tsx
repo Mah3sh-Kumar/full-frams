@@ -38,17 +38,26 @@ export default function MarksReviewManager() {
     }, [user, dateRange]);
 
     const loadSubjects = async () => {
+        // Get subjects through subject_teachers junction table
         const { data, error } = await supabase
-            .from('subjects')
+            .from('subject_teachers')
             .select(`
-                id, 
-                name,
-                org_classes (name)
+                subject_id,
+                subjects!inner (
+                    id, 
+                    name,
+                    classes!inner (name)
+                )
             `)
             .eq('teacher_id', user!.id);
         
         if (!error && data) {
-            setSubjects(data);
+            const formattedSubjects = data.map(st => ({
+                id: st.subjects.id,
+                name: st.subjects.name,
+                classes: st.subjects.classes
+            }));
+            setSubjects(formattedSubjects);
         }
     };
 
@@ -199,6 +208,8 @@ export default function MarksReviewManager() {
             borderWidth: 1,
             borderColor: tokens.colors.neutral.gray300,
             marginBottom: tokens.spacing.md,
+            textAlign: 'left',
+            writingDirection: 'ltr',
         },
         sortButtons: {
             flexDirection: 'row',
@@ -336,7 +347,7 @@ export default function MarksReviewManager() {
                         ...subjects.map(subject => ({
                             label: subject.name,
                             value: subject.id,
-                            description: subject.org_classes?.name,
+                            description: subject.classes?.name,
                             icon: 'book-outline' as const
                         }))
                     ]}

@@ -326,6 +326,23 @@ export default function AdminDashboard() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
+                        onPress={() => navigation.navigate('AssignSubjects' as never)}
+                        activeOpacity={0.7}
+                        style={styles.cardWrapper}
+                    >
+                        <View style={[styles.taskCard, { borderLeftColor: tokens.colors.warning.main, backgroundColor: getSurfaceColor() }]}>
+                            <View style={[styles.iconContainer, { backgroundColor: `${tokens.colors.warning.main}15` }]}>
+                                <Ionicons name="book" size={28} color={tokens.colors.warning.main} />
+                            </View>
+                            <View style={styles.textContainer}>
+                                <Text style={[styles.taskTitle, { color: getTextColor() }]}>Assign Subjects</Text>
+                                <Text style={[styles.taskDescription, { color: getTextSecondaryColor() }]}>Assign subjects to teachers.</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={getTextSecondaryColor()} />
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
                         onPress={() => navigation.navigate('Reports' as never)}
                         activeOpacity={0.7}
                         style={styles.cardWrapper}

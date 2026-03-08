@@ -7,7 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { verifyUser, verifyUsersBatch, deleteUser } from '../../lib/admin';
 import Button from '../../components/design-system/primitives/Button';
-import Checkbox from 'react-native-paper/src/components/Checkbox/Checkbox'; // Using internal if needed or Segmented for select
+import Checkbox from 'react-native-paper/src/components/Checkbox/Checkbox';
+import { ActionButton } from '../../components/common/ActionButtons'; // Using internal if needed or Segmented for select
 
 export default function VerificationDashboard() {
   const { tokens, getTextColor, getSurfaceColor, getTextSecondaryColor, getBackgroundColor } = useTheme();
@@ -127,9 +128,12 @@ export default function VerificationDashboard() {
           <TouchableOpacity onPress={() => handleApproveSingle(item.id)} style={styles.actionButton}>
             <Ionicons name="checkmark-circle" size={28} color={tokens.colors.success.main} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionButton}>
-            <Ionicons name="trash-outline" size={24} color={tokens.colors.error.main} />
-          </TouchableOpacity>
+          <ActionButton
+            type="delete"
+            onPress={() => handleDelete(item.id)}
+            accessibilityLabel={`Delete ${item.full_name}`}
+            size={24}
+          />
         </View>
       </View>
     );

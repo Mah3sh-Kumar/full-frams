@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Select Picker</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+body{
+font-family: "Inter", sans-serif;
+background:#f5f7fb;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.container{
+width:320px;
+}
+
+.label{
+font-size:14px;
+font-weight:600;
+margin-bottom:6px;
+}
+
+.picker{
+background:white;
+border-radius:14px;
+padding:14px;
+border:2px solid #e3e6ee;
+display:flex;
+align-items:center;
+justify-content:space-between;
+cursor:pointer;
+transition:0.2s;
+}
+
+.picker:hover{
+border-color:#4f7cff;
+}
+
+.picker-text{
+color:#444;
+}
+
+.modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.55);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+.modal-content{
+background:white;
+width:340px;
+border-radius:18px;
+padding:18px;
+animation:scaleIn .2s ease;
+}
+
+@keyframes scaleIn{
+from{transform:scale(.9);opacity:0}
+to{transform:scale(1);opacity:1}
+}
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:10px;
+}
+
+.search{
+width:100%;
+padding:10px;
+border-radius:10px;
+border:1px solid #ddd;
+margin-bottom:10px;
+}
+
+.list{
+max-height:240px;
+overflow-y:auto;
+}
+
+.item{
+padding:12px;
+border-radius:10px;
+cursor:pointer;
+display:flex;
+align-items:center;
+gap:10px;
+transition:0.15s;
+}
+
+.item:hover{
+background:#f0f3ff;
+}
+
+.item.selected{
+background:#4f7cff;
+color:white;
+}
+
+.icon{
+width:26px;
+text-align:center;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+<div class="label">Department</div>
+
+<div class="picker" onclick="openPicker()">
+<span class="picker-text" id="selectedText">Select Department</span>
+<i class="fa fa-chevron-down"></i>
+</div>
+
+</div>
+
+
+<div class="modal" id="modal">
+
+<div class="modal-content">
+
+<div class="header">
+<strong>Select Department</strong>
+<i class="fa fa-xmark" onclick="closePicker()" style="cursor:pointer"></i>
+</div>
+
+<input type="text" placeholder="Search..." class="search" onkeyup="searchItems(this.value)">
+
+<div class="list" id="list">
+
+<div class="item" onclick="selectItem(this,'Computer Science')">
+<span class="icon"><i class="fa fa-laptop"></i></span>
+Computer Science
+</div>
+
+<div class="item" onclick="selectItem(this,'Information Technology')">
+<span class="icon"><i class="fa fa-server"></i></span>
+Information Technology
+</div>
+
+<div class="item" onclick="selectItem(this,'Mathematics')">
+<span class="icon"><i class="fa fa-calculator"></i></span>
+Mathematics
+</div>
+
+<div class="item" onclick="selectItem(this,'Physics')">
+<span class="icon"><i class="fa fa-atom"></i></span>
+Physics
+</div>
+
+<div class="item" onclick="selectItem(this,'Commerce')">
+<span class="icon"><i class="fa fa-chart-line"></i></span>
+Commerce
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<script>
+
+function openPicker(){
+document.getElementById("modal").style.display="flex"
+}
+
+function closePicker(){
+document.getElementById("modal").style.display="none"
+}
+
+function selectItem(element,value){
+
+document.querySelectorAll(".item").forEach(i=>{
+i.classList.remove("selected")
+})
+
+element.classList.add("selected")
+
+document.getElementById("selectedText").innerText=value
+
+closePicker()
+}
+
+function searchItems(query){
+
+query=query.toLowerCase()
+
+document.querySelectorAll(".item").forEach(item=>{
+const text=item.innerText.toLowerCase()
+
+item.style.display=text.includes(query)?"flex":"none"
+})
+
+}
+
+</script>
+
+</body>
+</html>

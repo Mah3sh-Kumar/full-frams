@@ -181,23 +181,37 @@ export async function checkEnrollmentNumberUnique(enrollmentNumber: string): Pro
 // Fetch subjects assigned to a teacher
 export async function fetchTeacherSubjects(teacherId: string) {
     try {
+        // Query through subject_teachers junction table
         const { data, error } = await supabase
-            .from('subjects')
+            .from('subject_teachers')
             .select(`
-                id, 
-                name, 
-                code, 
-                class_id, 
-                classes (
-                    id,
-                    name,
-                    academic_year
+                subject_id,
+                subjects!inner (
+                    id, 
+                    name, 
+                    code, 
+                    class_id, 
+                    classes (
+                        id,
+                        name,
+                        academic_year
+                    )
                 )
             `)
             .eq('teacher_id', teacherId);
 
         if (error) throw error;
-        return { data: data || [], error: null };
+        
+        // Transform the data to match the expected format
+        const formattedData = data?.map(item => ({
+            id: item.subjects.id,
+            name: item.subjects.name,
+            code: item.subjects.code,
+            class_id: item.subjects.class_id,
+            classes: item.subjects.classes
+        })) || [];
+        
+        return { data: formattedData, error: null };
     } catch (error: any) {
         console.error('Error fetching teacher subjects:', error);
         return { data: [], error: getErrorMessage(error) };
@@ -265,32 +279,79 @@ export async function markAttendance(
 }
 
 // Fetch assignments created by a teacher
-// Fetch assignments created by a teacher
 export async function fetchTeacherAssignments(teacherId: string) {
     try {
-        const { data: subjects } = await supabase
-            .from('subjects')
-            .select('id')
+        // Get subjects through subject_teachers junction table
+        const { data: subjectTeachers, error: stError } = await supabase
+            .from('subject_teachers')
+            .select('subject_id')
             .eq('teacher_id', teacherId);
 
-        const subjectIds = subjects?.map(s => s.id) || [];
+        if (stError) {
+            console.error('Error fetching subject_teachers:', stError);
+            throw stError;
+        }
+
+        const subjectIds = subjectTeachers?.map(st => st.subject_id) || [];
 
         if (subjectIds.length === 0) return { data: [], error: null };
 
+        // Fetch assignments for these subjects
         const { data: assignments, error: assignError } = await supabase
             .from('assignments')
-            .select(`
-                *,
-                subjects (name, classes(name, academic_year))
-            `)
+            .select('*')
             .in('subject_id', subjectIds)
             .order('created_at', { ascending: false });
 
-        if (assignError) throw assignError;
+        if (assignError) {
+            console.error('Error fetching assignments:', assignError);
+            throw assignError;
+        }
+
+        // Fetch subject and class details separately
+        if (assignments && assignments.length > 0) {
+            const uniqueSubjectIds = [...new Set(assignments.map(a => a.subject_id))];
+            
+            const { data: subjects, error: subjectsError } = await supabase
+                .from('subjects')
+                .select(`
+                    id,
+                    name,
+                    code,
+                    class_id,
+                    classes:class_id (
+                        id,
+                        name,
+                        academic_year
+                    )
+                `)
+                .in('id', uniqueSubjectIds);
+
+            if (subjectsError) {
+                console.error('Error fetching subjects:', subjectsError);
+            }
+
+            // Map subjects to assignments
+            const subjectsMap = new Map(subjects?.map(s => [s.id, s]) || []);
+            
+            const enrichedAssignments = assignments.map(assignment => {
+                const subject = subjectsMap.get(assignment.subject_id);
+                return {
+                    ...assignment,
+                    subjects: subject ? {
+                        name: subject.name,
+                        code: subject.code,
+                        classes: subject.classes
+                    } : null
+                };
+            });
+
+            return { data: enrichedAssignments, error: null };
+        }
 
         return { data: assignments || [], error: null };
     } catch (error: any) {
-        console.error('Error fetching assignments:', error);
+        console.error('Error fetching teacher assignments:', error);
         return { data: [], error: getErrorMessage(error) };
     }
 }
@@ -693,23 +754,44 @@ export async function fetchStudentMetadata(studentId: string) {
 // Fetch teacher's metadata (department)
 export async function fetchTeacherMetadata(teacherId: string) {
     try {
+        if (!teacherId) {
+            return { data: null, error: 'Teacher ID is required' };
+        }
+
         const { data, error } = await supabase
             .from('teachers')
             .select('department')
             .eq('id', teacherId)
-            .single();
+            .maybeSingle(); // Use maybeSingle instead of single to handle missing records gracefully
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error fetching teacher metadata:', error);
+            throw error;
+        }
+
+        // If no teacher record exists, return default values
+        if (!data) {
+            console.warn(`No teacher metadata found for ID: ${teacherId}`);
+            return {
+                data: {
+                    department: 'Not assigned',
+                },
+                error: null
+            };
+        }
 
         return {
             data: {
-                department: data?.department,
+                department: data.department || 'Not assigned',
             },
             error: null
         };
     } catch (error: any) {
         console.error('Error fetching teacher metadata:', error);
-        return { data: null, error: getErrorMessage(error) };
+        return { 
+            data: { department: 'Not assigned' }, 
+            error: getErrorMessage(error) 
+        };
     }
 }
 

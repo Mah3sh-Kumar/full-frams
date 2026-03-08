@@ -7,10 +7,6 @@ import { useTheme } from '../../lib/design-system/ThemeContext';
 import LoadingSpinner from '../../components/design-system/feedback/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
-import { fetchTeacherMetadata } from '../../lib/database';
-import { getSubjectsByTeacher } from '../../lib/subjects';
-import SubjectCard from '../../components/admin/subjects/SubjectCard';
-import { SubjectItem, TeacherInfo } from '../../lib/types';
 
 export default function TeacherDashboard() {
     const navigation = useNavigation();
@@ -24,10 +20,6 @@ export default function TeacherDashboard() {
         totalClasses: 0,
         pendingReviews: 0
     });
-    const [metadata, setMetadata] = useState({
-        department: '',
-    });
-    const [subjects, setSubjects] = useState<(SubjectItem & { teachers: TeacherInfo[] })[]>([]);
 
     useEffect(() => {
         loadData();
@@ -63,29 +55,24 @@ export default function TeacherDashboard() {
                 setTeacherName(firstName);
             }
 
-            // Load Teacher Metadata (Department)
-            const { data: metadataRes } = await fetchTeacherMetadata(session.user.id);
-            if (metadataRes) {
-                setMetadata({
-                    department: metadataRes.department || 'Not assigned',
-                });
-            }
-
-            // Load Subjects assigned to this teacher
-            const { data: subjectsData, error: subjectsError } = await getSubjectsByTeacher(session.user.id);
-            if (subjectsError) {
-                console.error('Error loading subjects:', subjectsError);
-            } else if (subjectsData) {
-                setSubjects(subjectsData);
-            }
-
-            // Load Subjects (to get classes) - using old query for stats
-            const { data: subjectsForStats } = await supabase
-                .from('subjects')
-                .select('id, class_id')
+            // Load Subjects (to get classes) - using new query through subject_teachers
+            const { data: subjectTeachers } = await supabase
+                .from('subject_teachers')
+                .select(`
+                    subject_id,
+                    subjects!inner (
+                        id,
+                        class_id
+                    )
+                `)
                 .eq('teacher_id', session.user.id);
 
-            if (subjectsForStats) {
+            if (subjectTeachers) {
+                const subjectsForStats = subjectTeachers.map(st => ({
+                    id: st.subjects.id,
+                    class_id: st.subjects.class_id
+                }));
+                
                 const uniqueClassIds = [...new Set(subjectsForStats.map(s => s.class_id).filter(Boolean))];
                 const subjectIds = subjectsForStats.map(s => s.id);
 
@@ -152,11 +139,6 @@ export default function TeacherDashboard() {
                     <View style={styles.welcomeContent}>
                         <Text style={styles.welcomeTitle}>{getGreeting()}, {teacherName}!</Text>
                         <Text style={styles.welcomeSubtitle}>Manage your classes and students</Text>
-                        {metadata.department && (
-                            <Text style={[styles.welcomeSubtitle, { marginTop: 8, opacity: 0.9 }]}>
-                                Department: {metadata.department}
-                            </Text>
-                        )}
                     </View>
                     <View style={styles.quickActions}>
                         <TouchableOpacity
@@ -246,6 +228,23 @@ export default function TeacherDashboard() {
                             <Ionicons name="chevron-forward" size={20} color={getTextSecondaryColor()} />
                         </View>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('AssignedSubjects' as never)}
+                        activeOpacity={0.7}
+                        style={styles.cardWrapper}
+                    >
+                        <View style={[styles.taskCard, { borderLeftColor: tokens.colors.primary.main, backgroundColor: getSurfaceColor() }]}>
+                            <View style={[styles.iconContainer, { backgroundColor: `${tokens.colors.primary.main}15` }]}>
+                                <Ionicons name="book" size={28} color={tokens.colors.primary.main} />
+                            </View>
+                            <View style={styles.textContainer}>
+                                <Text style={[styles.taskTitle, { color: getTextColor() }]}>Assigned Subjects</Text>
+                                <Text style={[styles.taskDescription, { color: getTextSecondaryColor() }]}>View subjects and classes you teach.</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={getTextSecondaryColor()} />
+                        </View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Key Statistics Section */}
@@ -283,29 +282,6 @@ export default function TeacherDashboard() {
                         <Text style={[styles.statValue, { color: getTextColor() }]}>{stats.pendingReviews}</Text>
                     </View>
                 </View>
-
-                {/* My Subjects Section */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: getTextColor() }]}>My Subjects</Text>
-                    {subjects.length === 0 ? (
-                        <View style={[styles.emptyState, { backgroundColor: getSurfaceColor() }]}>
-                            <Ionicons name="book-outline" size={48} color={getTextSecondaryColor()} />
-                            <Text style={[styles.emptyStateText, { color: getTextSecondaryColor() }]}>
-                                No subjects assigned yet
-                            </Text>
-                        </View>
-                    ) : (
-                        subjects.map((subject) => (
-                            <SubjectCard
-                                key={subject.id}
-                                subject={subject}
-                                onEdit={() => {}}
-                                onDelete={() => {}}
-                                showActions={false}
-                            />
-                        ))
-                    )}
-                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -325,8 +301,8 @@ const styles = StyleSheet.create({
     },
     welcomeSection: {
         paddingHorizontal: 24,
-        paddingTop: 48,
-        paddingBottom: 32,
+        paddingTop: 24,
+        paddingBottom: 24,
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
         shadowColor: '#000',
@@ -345,17 +321,16 @@ const styles = StyleSheet.create({
         marginRight: 16,
     },
     welcomeTitle: {
-        fontSize: 28,
-        fontWeight: '800',
+        fontSize: 26,
+        fontWeight: '700',
         color: '#FFFFFF',
         marginBottom: 8,
         lineHeight: 34,
     },
     welcomeSubtitle: {
-        fontSize: 16,
-        color: '#FFFFFF',
-        opacity: 0.95,
-        lineHeight: 22,
+        fontSize: 15,
+        color: 'rgba(255, 255, 255, 0.90)',
+        lineHeight: 24,
     },
     quickActions: {
         flexDirection: 'row',
@@ -366,11 +341,11 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        borderColor: 'rgba(255, 255, 255, 0.25)',
     },
     section: {
         paddingHorizontal: 24,
@@ -378,9 +353,10 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     sectionTitle: {
-        fontSize: 20,
-        fontWeight: '700',
+        fontSize: 22,
+        fontWeight: '600',
         marginBottom: 16,
+        lineHeight: 30,
     },
     cardWrapper: {
         marginBottom: 16,
@@ -412,10 +388,11 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 4,
+        lineHeight: 26,
     },
     taskDescription: {
-        fontSize: 14,
-        lineHeight: 20,
+        fontSize: 15,
+        lineHeight: 24,
     },
     statsRow: {
         flexDirection: 'row',
@@ -452,23 +429,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     statValue: {
-        fontSize: 36,
+        fontSize: 32,
         fontWeight: '700',
-    },
-    emptyState: {
-        borderRadius: 16,
-        padding: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    emptyStateText: {
-        fontSize: 16,
-        marginTop: 12,
-        textAlign: 'center',
+        lineHeight: 42,
     },
 });

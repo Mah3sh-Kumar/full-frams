@@ -34,6 +34,7 @@ import LoadingSpinner from '../../components/design-system/feedback/LoadingSpinn
 import ConfirmDialog from '../../components/ConfirmDialog';
 import EmptyState from '../../components/EmptyState';
 import { Ionicons } from '@expo/vector-icons';
+import { ActionButtonsGroup } from '../../components/common/ActionButtons';
 import {
   getClasses,
   createClass,
@@ -457,28 +458,14 @@ export default function OrganizationManager() {
               )}
             </View>
           </View>
-          <View style={styles.actions}>
-            <TouchableOpacity
-              onPress={() => openEditModal(item)}
-              style={[styles.actionButton, { backgroundColor: dynamicStyles.actionButtonBg }]}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${item.name}`}
-              accessibilityHint="Opens edit form"
-            >
-              <Ionicons name="pencil" size={20} color={tokens.colors.primary.main} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => confirmDelete(item)}
-              style={[styles.actionButton, { backgroundColor: dynamicStyles.actionButtonBg }]}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Delete ${item.name}`}
-              accessibilityHint="Opens delete confirmation"
-            >
-              <Ionicons name="trash" size={20} color={tokens.colors.error.main} />
-            </TouchableOpacity>
-          </View>
+          <ActionButtonsGroup
+            onEdit={() => openEditModal(item)}
+            onDelete={() => confirmDelete(item)}
+            editAccessibilityLabel={`Edit ${item.name}`}
+            editAccessibilityHint="Opens edit form"
+            deleteAccessibilityLabel={`Delete ${item.name}`}
+            deleteAccessibilityHint="Opens delete confirmation"
+          />
         </View>
       </View>
     );

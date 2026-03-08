@@ -16,6 +16,7 @@ import { exportCSV } from '../../lib/csvExport';
 import KeyboardAwareScrollView from '../../components/KeyboardAwareScrollView';
 import EnhancedPicker from '../../components/EnhancedPicker';
 import { getClasses, getBranches, getDepartments, ClassItem, BranchItem, DepartmentItem } from '../../lib/organization';
+import { ActionButton } from '../../components/common/ActionButtons';
 
 type UserData = {
     id: string;
@@ -864,24 +865,20 @@ export default function UserManagement() {
                                 <Ionicons name="close-circle" size={22} color={tokens.colors.warning.main} />
                             </TouchableOpacity>
                         )}
-                        <TouchableOpacity
+                        <ActionButton
+                            type="edit"
                             onPress={() => openEditModal(item)}
-                            style={styles.actionButton}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name="pencil" size={20} color={tokens.colors.primary.main} />
-                        </TouchableOpacity>
+                            accessibilityLabel={`Edit ${item.full_name}`}
+                        />
                         {item.role !== 'admin' && (
-                            <TouchableOpacity
+                            <ActionButton
+                                type="delete"
                                 onPress={() => {
                                     setUserToDelete(item);
                                     setDeleteConfirmVisible(true);
                                 }}
-                                style={styles.actionButton}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons name="trash" size={20} color={tokens.colors.error.main} />
-                            </TouchableOpacity>
+                                accessibilityLabel={`Delete ${item.full_name}`}
+                            />
                         )}
                     </View>
                 </View>

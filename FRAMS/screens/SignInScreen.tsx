@@ -75,10 +75,10 @@ export default function SignInScreen({ navigation }: Props) {
 
         if (error) {
             // Check if error is related to email verification
-            if (error.toLowerCase().includes('email') && error.toLowerCase().includes('confirm')) {
+            if (error.toLowerCase().includes('email') && (error.toLowerCase().includes('confirm') || error.toLowerCase().includes('verif'))) {
                 setErrorMsg('Please verify your email before signing in. Check your inbox for the verification link.');
-            } else if (error.includes('Invalid login credentials')) {
-                setErrorMsg('Invalid email or password. Please try again.');
+            } else if (error.toLowerCase().includes('invalid') && (error.toLowerCase().includes('credentials') || error.toLowerCase().includes('login') || error.toLowerCase().includes('password'))) {
+                setErrorMsg('Invalid email or password. Please check your credentials and try again.');
             } else {
                 setErrorMsg(error);
             }

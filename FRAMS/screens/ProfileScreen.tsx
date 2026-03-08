@@ -259,7 +259,7 @@ export default function ProfileScreen(_props: Props) {
                             </>
                         )}
 
-                        {role === 'teacher' && (
+                        {role === 'teacher' && profile.department && profile.department !== 'Not assigned' && (
                             <View style={styles.inputSpacing}>
                                 <Input
                                     label="Department"
@@ -267,6 +267,7 @@ export default function ProfileScreen(_props: Props) {
                                     onChangeText={setEditedDepartment}
                                     disabled={!editing}
                                     accessibilityLabel="Department"
+                                    placeholder="Enter your department"
                                 />
                             </View>
                         )}
@@ -380,7 +381,7 @@ export default function ProfileScreen(_props: Props) {
                             />
                         )}
                         
-                        {role === 'teacher' && profile.department && (
+                        {role === 'teacher' && profile.department && profile.department !== 'Not assigned' && (
                             <InfoRow
                                 icon="briefcase-outline"
                                 label="Department"

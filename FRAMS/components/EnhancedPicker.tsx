@@ -1,76 +1,40 @@
 /**
  * EnhancedPicker Component
  * 
- * An improved picker component with proper state management, visual feedback,
- * search functionality, and accessibility features. Fixes the value display
- * issues present in the standard React Native Picker.
+ * An improved picker component with modern design, smooth animations,
+ * search functionality, and accessibility features.
  * 
  * Features:
- * - Controlled component with proper value display
+ * - Smooth spring animations
+ * - Modern visual design with icons
  * - Automatic search for lists with >10 items
  * - Visual feedback on selection
  * - Error state support
- * - Full accessibility support (screen readers, keyboard navigation)
- * - Modal-based selection for better UX
- * 
- * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 4.3, 4.4, 4.6
- * 
- * @example
- * ```tsx
- * <EnhancedPicker
- *   label="Class"
- *   value={selectedClass}
- *   items={[
- *     { label: 'Grade 1', value: 'grade_1' },
- *     { label: 'Grade 2', value: 'grade_2' },
- *   ]}
- *   onValueChange={setSelectedClass}
- *   error={errors.class}
- *   searchable
- * />
- * ```
+ * - Full accessibility support
+ * - Platform-specific optimizations
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, FlatList, Animated, Platform, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/design-system/ThemeContext';
 
-/**
- * Represents a single item in the picker dropdown
- * @template T - Type of the value (defaults to string)
- */
 export interface PickerItem<T = string> {
-  /** Display text shown to the user */
   label: string;
-  /** Internal value used for selection */
   value: T;
-  /** Whether this item can be selected */
   disabled?: boolean;
+  icon?: string;
 }
 
-/**
- * Props for the EnhancedPicker component
- * @template T - Type of the value (defaults to string)
- */
 export interface EnhancedPickerProps<T = string> {
-  /** Label displayed above the picker */
   label: string;
-  /** Currently selected value */
   value: T;
-  /** Array of items to display in the picker */
   items: PickerItem<T>[];
-  /** Callback fired when selection changes */
   onValueChange: (value: T) => void;
-  /** Error message to display below the picker */
   error?: string;
-  /** Whether the picker is disabled */
   disabled?: boolean;
-  /** Placeholder text when no value is selected */
   placeholder?: string;
-  /** Enable search functionality (auto-enabled for >10 items) */
   searchable?: boolean;
-  /** Test ID for automated testing */
   testID?: string;
 }
 
@@ -85,19 +49,20 @@ function EnhancedPicker<T = string>({
   searchable = false,
   testID,
 }: EnhancedPickerProps<T>) {
-  const { tokens, getTextColor, getTextSecondaryColor, getSurfaceColor, getBackgroundColor, getBorderColor, mode } = useTheme();
+  const { tokens, getTextColor, getTextSecondaryColor, getSurfaceColor, getInputColor, getInputDisabledColor, getBorderColor, mode } = useTheme();
   const isDark = mode === 'dark';
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
-  const [buttonFocused, setButtonFocused] = useState(false);
+  
+  // Animation values
+  const [scaleAnim] = useState(new Animated.Value(0));
+  const [fadeAnim] = useState(new Animated.Value(0));
 
-  // Find the selected item to display its label
   const selectedItem = useMemo(() => {
     return items.find(item => item.value === value);
   }, [items, value]);
 
-  // Filter items based on search query
   const filteredItems = useMemo(() => {
     const trimmedQuery = searchQuery.trim();
     if (!searchable || !trimmedQuery) {
@@ -109,27 +74,49 @@ function EnhancedPicker<T = string>({
     );
   }, [items, searchQuery, searchable]);
 
-  // Determine if search should be shown (more than 10 items)
   const shouldShowSearch = searchable || items.length > 10;
 
   const handleSelect = (itemValue: T) => {
     onValueChange(itemValue);
-    setModalVisible(false);
-    setSearchQuery('');
+    handleClose();
   };
 
   const handleOpen = () => {
     if (!disabled) {
       setModalVisible(true);
-      setButtonFocused(true);
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   };
 
   const handleClose = () => {
-    setModalVisible(false);
-    setSearchQuery('');
-    setSearchFocused(false);
-    setButtonFocused(false);
+    Animated.parallel([
+      Animated.timing(scaleAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setModalVisible(false);
+      setSearchQuery('');
+      setSearchFocused(false);
+    });
   };
 
   const styles = StyleSheet.create({
@@ -146,28 +133,54 @@ function EnhancedPicker<T = string>({
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: disabled 
-        ? (isDark ? tokens.colors.neutral.gray800 : tokens.colors.neutral.gray100) 
-        : getSurfaceColor(),
-      borderRadius: 14,
-      borderWidth: 1,
+      backgroundColor: disabled ? getInputDisabledColor() : getInputColor(),
+      borderRadius: 16,
+      borderWidth: 2,
       borderColor: error ? tokens.colors.error.main : getBorderColor(),
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      minHeight: 52,
-      shadowColor: tokens.colors.primary.main,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0,
-      shadowRadius: 8,
-      elevation: 0,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      minHeight: 56,
+      ...Platform.select({
+        ios: {
+          shadowColor: tokens.colors.primary.main,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 0,
+        },
+      }),
     },
     pickerButtonFocused: {
       borderColor: tokens.colors.primary.main,
-      shadowOpacity: 0.15,
-      elevation: 2,
+      borderWidth: 2.5,
+      backgroundColor: getSurfaceColor(),
+      ...Platform.select({
+        ios: {
+          shadowOpacity: 0.2,
+        },
+        android: {
+          elevation: 4,
+        },
+      }),
     },
     pickerButtonDisabled: {
       opacity: 0.6,
+    },
+    pickerContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    pickerIcon: {
+      marginRight: 14,
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     pickerText: {
       fontSize: 16,
@@ -178,6 +191,9 @@ function EnhancedPicker<T = string>({
     placeholderText: {
       color: getTextSecondaryColor(),
       fontWeight: '400',
+    },
+    chevronIcon: {
+      marginLeft: 8,
     },
     errorText: {
       fontSize: 14,
@@ -191,23 +207,30 @@ function EnhancedPicker<T = string>({
       alignItems: 'center',
     },
     modalContent: {
-      width: '92%',
-      maxHeight: '85%',
+      width: '90%',
+      maxWidth: 420,
+      maxHeight: Math.min(Dimensions.get('window').height * 0.75, Dimensions.get('window').height - 100),
       backgroundColor: getSurfaceColor(),
-      borderRadius: 20,
-      padding: 24,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.25,
-      shadowRadius: 20,
-      elevation: 10,
+      borderRadius: 24,
+      padding: 20,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.4,
+          shadowRadius: 24,
+        },
+        android: {
+          elevation: 16,
+        },
+      }),
     },
     modalHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 20,
-      paddingBottom: 16,
+      marginBottom: 16,
+      paddingBottom: 12,
       borderBottomWidth: 1,
       borderBottomColor: getBorderColor(),
     },
@@ -217,12 +240,12 @@ function EnhancedPicker<T = string>({
       color: getTextColor(),
     },
     closeButton: {
-      padding: 4,
+      padding: 8,
       borderRadius: 20,
       backgroundColor: isDark ? tokens.colors.neutral.gray800 : tokens.colors.neutral.gray100,
     },
     searchContainer: {
-      marginBottom: 16,
+      marginBottom: 12,
     },
     searchInput: {
       backgroundColor: isDark ? tokens.colors.neutral.gray900 : tokens.colors.neutral.gray50,
@@ -239,41 +262,83 @@ function EnhancedPicker<T = string>({
       backgroundColor: getSurfaceColor(),
     },
     listContainer: {
-      maxHeight: 400,
+      maxHeight: Math.min(Dimensions.get('window').height * 0.5, 400),
+      paddingBottom: 16,
     },
     listItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       paddingHorizontal: 16,
-      paddingVertical: 14,
-      borderRadius: 12,
-      marginBottom: 4,
-      backgroundColor: 'transparent',
-    },
-    listItemHover: {
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : tokens.colors.neutral.gray50,
+      paddingVertical: 16,
+      borderRadius: 14,
+      marginBottom: 8,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+      borderWidth: 2,
+      borderColor: 'transparent',
+      minHeight: 68,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 2,
+        },
+        android: {
+          elevation: 1,
+        },
+      }),
     },
     listItemSelected: {
-      backgroundColor: tokens.colors.primary.light,
-      borderWidth: 1,
+      backgroundColor: tokens.colors.primary.main,
       borderColor: tokens.colors.primary.main,
+      ...Platform.select({
+        ios: {
+          shadowColor: tokens.colors.primary.main,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
+        },
+        android: {
+          elevation: 8,
+        },
+      }),
     },
     listItemDisabled: {
       opacity: 0.4,
     },
+    listItemIcon: {
+      marginRight: 14,
+      width: 36,
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+    },
+    listItemContent: {
+      flex: 1,
+      paddingRight: 8,
+    },
     listItemText: {
       fontSize: 16,
       color: getTextColor(),
-      flex: 1,
-      fontWeight: '500',
+      fontWeight: '600',
+      letterSpacing: 0.3,
     },
     listItemTextSelected: {
-      fontWeight: '600',
-      color: tokens.colors.primary.main,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      fontSize: 16,
+      letterSpacing: 0.3,
     },
     checkIcon: {
-      marginLeft: 12,
+      marginLeft: 10,
+      width: 28,
+      height: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 14,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     emptyState: {
       padding: 40,
@@ -302,8 +367,8 @@ function EnhancedPicker<T = string>({
       <Text style={styles.label}>{label}</Text>
       <TouchableOpacity
         style={[
-          styles.pickerButton, 
-          buttonFocused && !error && styles.pickerButtonFocused,
+          styles.pickerButton,
+          modalVisible && !error && styles.pickerButtonFocused,
           disabled && styles.pickerButtonDisabled
         ]}
         onPress={handleOpen}
@@ -315,20 +380,31 @@ function EnhancedPicker<T = string>({
         accessibilityState={{ disabled }}
         testID={testID ? `${testID}-button` : undefined}
       >
-        <Text
-          style={[
-            styles.pickerText,
-            !selectedItem && styles.placeholderText,
-          ]}
-          testID={testID ? `${testID}-value` : undefined}
-        >
-          {selectedItem ? selectedItem.label : placeholder}
-        </Text>
-        <Ionicons
-          name={modalVisible ? "chevron-up" : "chevron-down"}
-          size={22}
-          color={disabled ? tokens.colors.neutral.gray400 : buttonFocused ? tokens.colors.primary.main : getTextSecondaryColor()}
-        />
+        <View style={styles.pickerContent}>
+          <View style={styles.pickerIcon}>
+            <Ionicons
+              name="list-outline"
+              size={22}
+              color={selectedItem ? tokens.colors.primary.main : getTextSecondaryColor()}
+            />
+          </View>
+          <Text
+            style={[
+              styles.pickerText,
+              !selectedItem && styles.placeholderText,
+            ]}
+            testID={testID ? `${testID}-value` : undefined}
+          >
+            {selectedItem ? selectedItem.label : placeholder}
+          </Text>
+        </View>
+        <View style={styles.chevronIcon}>
+          <Ionicons
+            name={modalVisible ? "chevron-up" : "chevron-down"}
+            size={20}
+            color={disabled ? tokens.colors.neutral.gray400 : modalVisible ? tokens.colors.primary.main : getTextSecondaryColor()}
+          />
+        </View>
       </TouchableOpacity>
       {error && (
         <Text style={styles.errorText} testID={testID ? `${testID}-error` : undefined}>
@@ -339,118 +415,155 @@ function EnhancedPicker<T = string>({
       <Modal
         visible={modalVisible}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={handleClose}
         testID={testID ? `${testID}-modal` : undefined}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={handleClose}
+        <Animated.View
+          style={[
+            styles.modalOverlay,
+            {
+              opacity: fadeAnim,
+            },
+          ]}
         >
           <TouchableOpacity
+            style={{ flex: 1 }}
             activeOpacity={1}
-            onPress={(e) => e?.stopPropagation?.()}
+            onPress={handleClose}
           >
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select {label}</Text>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={handleClose}
-                  accessible
-                  accessibilityRole="button"
-                  accessibilityLabel="Close picker"
-                >
-                  <Ionicons name="close" size={20} color={getTextSecondaryColor()} />
-                </TouchableOpacity>
-              </View>
+            <Animated.View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                transform: [
+                  {
+                    scale: scaleAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={(e) => e?.stopPropagation?.()}
+              >
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Select {label}</Text>
+                    <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={handleClose}
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel="Close picker"
+                    >
+                      <Ionicons name="close" size={18} color={getTextSecondaryColor()} />
+                    </TouchableOpacity>
+                  </View>
 
-              {shouldShowSearch && (
-                <View style={styles.searchContainer}>
-                  <TextInput
-                    style={[
-                      styles.searchInput,
-                      searchFocused && styles.searchInputFocused
-                    ]}
-                    placeholder={`Search ${label.toLowerCase()}...`}
-                    placeholderTextColor={getTextSecondaryColor()}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    onFocus={() => setSearchFocused(true)}
-                    onBlur={() => setSearchFocused(false)}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    testID={testID ? `${testID}-search` : undefined}
-                  />
-                </View>
-              )}
-
-              <View style={styles.listContainer}>
-                <FlatList
-                  data={filteredItems}
-                  keyExtractor={(item, index) => `${item.value}-${index}`}
-                  showsVerticalScrollIndicator={false}
-                  renderItem={({ item }) => {
-                    const isSelected = item.value === value;
-                    return (
-                      <TouchableOpacity
+                  {shouldShowSearch && (
+                    <View style={styles.searchContainer}>
+                      <TextInput
                         style={[
-                          styles.listItem,
-                          isSelected && styles.listItemSelected,
-                          item.disabled && styles.listItemDisabled,
+                          styles.searchInput,
+                          searchFocused && styles.searchInputFocused
                         ]}
-                        onPress={() => handleSelect(item.value)}
-                        disabled={item.disabled}
-                        accessible
-                        accessibilityRole="button"
-                        accessibilityLabel={item.label}
-                        accessibilityState={{ selected: isSelected, disabled: item.disabled }}
-                        testID={testID ? `${testID}-item-${item.value}` : undefined}
-                      >
-                        <Text
-                          style={[
-                            styles.listItemText,
-                            isSelected && styles.listItemTextSelected,
-                          ]}
-                        >
-                          {item.label}
-                        </Text>
-                        {isSelected && (
-                          <View style={styles.checkIcon}>
+                        placeholder={`Search ${label.toLowerCase()}...`}
+                        placeholderTextColor={getTextSecondaryColor()}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        onFocus={() => setSearchFocused(true)}
+                        onBlur={() => setSearchFocused(false)}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        testID={testID ? `${testID}-search` : undefined}
+                      />
+                    </View>
+                  )}
+
+                  <View style={styles.listContainer}>
+                    <FlatList
+                      data={filteredItems}
+                      keyExtractor={(item, index) => `${item.value}-${index}`}
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{ paddingBottom: 8 }}
+                      renderItem={({ item }) => {
+                        const isSelected = item.value === value;
+                        return (
+                          <TouchableOpacity
+                            style={[
+                              styles.listItem,
+                              isSelected && styles.listItemSelected,
+                              item.disabled && styles.listItemDisabled,
+                            ]}
+                            onPress={() => handleSelect(item.value)}
+                            disabled={item.disabled}
+                            accessible
+                            accessibilityRole="button"
+                            accessibilityLabel={item.label}
+                            accessibilityState={{ selected: isSelected, disabled: item.disabled }}
+                            testID={testID ? `${testID}-item-${item.value}` : undefined}
+                          >
+                            <View style={styles.listItemIcon}>
+                              <Ionicons
+                                name="ellipse"
+                                size={20}
+                                color={isSelected ? '#FFFFFF' : tokens.colors.primary.main}
+                              />
+                            </View>
+                            <View style={styles.listItemContent}>
+                              <Text
+                                style={[
+                                  styles.listItemText,
+                                  isSelected && styles.listItemTextSelected,
+                                ]}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                              >
+                                {item.label}
+                              </Text>
+                            </View>
+                            {isSelected && (
+                              <View style={styles.checkIcon}>
+                                <Ionicons
+                                  name="checkmark-circle"
+                                  size={20}
+                                  color="#FFFFFF"
+                                />
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      }}
+                      ListEmptyComponent={
+                        <View style={styles.emptyState}>
+                          <View style={styles.emptyStateIcon}>
                             <Ionicons
-                              name="checkmark-circle"
-                              size={22}
-                              color={tokens.colors.primary.main}
+                              name="search-outline"
+                              size={48}
+                              color={getTextSecondaryColor()}
                             />
                           </View>
-                        )}
-                      </TouchableOpacity>
-                    );
-                  }}
-                  ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                      <View style={styles.emptyStateIcon}>
-                        <Ionicons
-                          name="search-outline"
-                          size={48}
-                          color={getTextSecondaryColor()}
-                        />
-                      </View>
-                      <Text style={styles.emptyStateText}>
-                        No {label.toLowerCase()} found
-                      </Text>
-                      <Text style={styles.emptyStateSubtext}>
-                        Try adjusting your search terms
-                      </Text>
-                    </View>
-                  }
-                  testID={testID ? `${testID}-list` : undefined}
-                />
-              </View>
-            </View>
+                          <Text style={styles.emptyStateText}>
+                            No {label.toLowerCase()} found
+                          </Text>
+                          <Text style={styles.emptyStateSubtext}>
+                            Try adjusting your search terms
+                          </Text>
+                        </View>
+                      }
+                      testID={testID ? `${testID}-list` : undefined}
+                    />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
           </TouchableOpacity>
-        </TouchableOpacity>
+        </Animated.View>
       </Modal>
     </View>
   );
