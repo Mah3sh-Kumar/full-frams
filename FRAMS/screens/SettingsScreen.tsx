@@ -102,12 +102,6 @@ export default function SettingsScreen({ navigation }: Props) {
 
     return (
         <ScrollView style={[styles.container, { backgroundColor: getBackgroundColor() }]}>            
-            {/* Header */}
-            <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }] }>
-                <Text style={styles.headerTitle}>Settings</Text>
-                <Text style={styles.headerSubtitle}>Manage your account preferences</Text>
-            </View>
-            
             {/* Appearance Section */}
             <Card variant="default" style={styles.card}>
                 <View style={styles.sectionContent}>
@@ -357,29 +351,6 @@ export default function SettingsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    header: {
-        paddingTop: 45,
-        paddingHorizontal: 26,
-        paddingBottom: 33,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: '#FFFFFF',
-        marginBottom: 4,
-        lineHeight: 28,
-    },
-    headerSubtitle: {
-        fontSize: 16,
-        color: '#FFFFFF',
-        opacity: 0.8,
-        lineHeight: 22,
     },
     card: {
         marginHorizontal: 16,

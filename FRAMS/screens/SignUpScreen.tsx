@@ -35,6 +35,8 @@ export default function SignUpScreen({ navigation }: Props) {
     const [enrollmentNumber, setEnrollmentNumber] = useState('');
     const [classLevel, setClassLevel] = useState('');
     const [branch, setBranch] = useState('');
+    const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
+    const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
 
     // Teacher-specific
     const [department, setDepartment] = useState('');
@@ -58,39 +60,38 @@ export default function SignUpScreen({ navigation }: Props) {
         fetchOrganizationalData();
     }, []);
 
-    // Fetch branches when class level changes
-    useEffect(() => {
-        if (classLevel) {
-            fetchBranchesForClass(classLevel);
-        }
-    }, [classLevel]);
-
     const fetchOrganizationalData = async () => {
         setLoadingData(true);
         setDataError(null);
         try {
-            const [classesResult, departmentsResult] = await Promise.all([
-                getClasses(),
+            const [branchesResult, departmentsResult] = await Promise.all([
+                getBranches(), // Get all branches
                 getDepartments(),
             ]);
 
-            console.log('📊 Classes fetched:', classesResult.data);
+            console.log('📊 Branches fetched:', branchesResult.data);
             console.log('📊 Departments fetched:', departmentsResult.data);
 
-            if (classesResult.error) {
-                throw new Error(classesResult.error);
+            if (branchesResult.error) {
+                throw new Error(branchesResult.error);
             }
             if (departmentsResult.error) {
                 throw new Error(departmentsResult.error);
             }
 
-            setClasses(classesResult.data || []);
+            setBranches(branchesResult.data || []);
             setDepartments(departmentsResult.data || []);
 
-            // Set default values with proper null checks
-            if (classesResult.data && Array.isArray(classesResult.data) && classesResult.data.length > 0) {
-                setClassLevel(classesResult.data[0].value);
+            // Set default branch
+            if (branchesResult.data && Array.isArray(branchesResult.data) && branchesResult.data.length > 0) {
+                const firstBranch = branchesResult.data[0];
+                setBranch(firstBranch.name);
+                setSelectedBranchId(firstBranch.id);
+                setSelectedDepartmentId(firstBranch.department_id || null);
+                // Fetch classes for the first branch
+                fetchClassesForBranch(firstBranch.id);
             }
+            
             if (departmentsResult.data && Array.isArray(departmentsResult.data) && departmentsResult.data.length > 0) {
                 console.log('✅ Setting default department to:', departmentsResult.data[0].name);
                 setDepartment(departmentsResult.data[0].name);
@@ -106,31 +107,26 @@ export default function SignUpScreen({ navigation }: Props) {
         }
     };
 
-    const fetchBranchesForClass = async (classValue: string) => {
+    const fetchClassesForBranch = async (branchId: string) => {
         try {
-            // Find the class ID from the value
-            const selectedClass = classes.find(c => c.value === classValue);
-            if (!selectedClass) {
-                setBranches([]);
-                return;
+            const classesResult = await getClasses();
+            if (classesResult.error) {
+                throw new Error(classesResult.error);
             }
 
-            const branchesResult = await getBranches(selectedClass.id);
-            if (branchesResult.error) {
-                throw new Error(branchesResult.error);
-            }
-
-            setBranches(branchesResult.data || []);
+            // Filter classes that belong to this branch
+            const branchClasses = (classesResult.data || []).filter(c => c.branch_id === branchId);
+            setClasses(branchClasses);
             
-            // Set default branch if available with proper null checks
-            if (branchesResult.data && Array.isArray(branchesResult.data) && branchesResult.data.length > 0) {
-                setBranch(branchesResult.data[0].name);
+            // Set default class if available
+            if (branchClasses.length > 0) {
+                setClassLevel(branchClasses[0].value);
             } else {
-                setBranch('');
+                setClassLevel('');
             }
         } catch (error: any) {
-            console.error('Error fetching branches:', error);
-            setBranches([]);
+            console.error('Error fetching classes:', error);
+            setClasses([]);
         }
     };
 
@@ -206,8 +202,12 @@ export default function SignUpScreen({ navigation }: Props) {
                 }
             }
 
-            if (classLevel.startsWith('grad_year') && !branch.trim()) {
-                newErrors.branch = 'Branch is required for graduation students';
+            if (!branch.trim()) {
+                newErrors.branch = 'Branch is required';
+            }
+            
+            if (!classLevel.trim()) {
+                newErrors.classLevel = 'Class/Year is required';
             }
         }
 
@@ -237,16 +237,17 @@ export default function SignUpScreen({ navigation }: Props) {
 
             if (role === 'student') {
                 payload.enrollmentNumber = enrollmentNumber.trim();
-                payload.classLevel = classLevel;
                 
-                // Find dynamic class ID for the new org_class_id field
+                // Find dynamic class ID
                 const selectedClass = classes.find(c => c.value === classLevel);
                 if (selectedClass) {
                     payload.classId = selectedClass.id;
                 }
                 
-                if (classLevel.startsWith('grad_year')) {
-                    payload.branch = branch.trim();
+                // Pass branch_id and department_id (auto-derived from branch)
+                if (selectedBranchId) {
+                    payload.branchId = selectedBranchId;
+                    payload.departmentId = selectedDepartmentId || undefined;
                 }
             } else if (role === 'teacher') {
                 payload.department = department;
@@ -270,11 +271,10 @@ export default function SignUpScreen({ navigation }: Props) {
     const isFormValid = useCallback(() => {
         if (!fullName || !email || !password || !confirmPassword) return false;
         if (password !== confirmPassword) return false;
-        if (role === 'student' && !enrollmentNumber) return false;
-        if (role === 'student' && classLevel.startsWith('grad_year') && !branch) return false;
+        if (role === 'student' && (!enrollmentNumber || !branch || !classLevel)) return false;
         if (role === 'teacher' && !department) return false;
         return true;
-    }, [fullName, email, password, confirmPassword, role, enrollmentNumber, classLevel, branch, department]);
+    }, [fullName, email, password, confirmPassword, role, enrollmentNumber, branch, classLevel, department]);
 
     // Memoized handlers to prevent re-renders
     const handleFullNameChange = useCallback((text: string) => {
@@ -485,34 +485,45 @@ export default function SignUpScreen({ navigation }: Props) {
                                 />
 
                                 <SelectPicker
-                                    label="Class Level"
-                                    value={classLevel}
-                                    items={classes.map(c => ({ 
-                                        label: c.name, 
-                                        value: c.value,
-                                        description: c.academic_year ? `Year: ${c.academic_year}` : undefined,
-                                        icon: c.value.includes('grad') ? 'school-outline' : 'library-outline'
+                                    label="Branch / Program"
+                                    value={branch}
+                                    items={branches.map(b => ({ 
+                                        label: b.name, 
+                                        value: b.name,
+                                        icon: 'briefcase-outline' as const
                                     }))}
-                                    onValueChange={(value) => setClassLevel(value)}
+                                    onValueChange={(value) => {
+                                        setBranch(value);
+                                        // Find the selected branch and auto-set department
+                                        const selectedBranch = branches.find(b => b.name === value);
+                                        if (selectedBranch) {
+                                            setSelectedBranchId(selectedBranch.id);
+                                            setSelectedDepartmentId(selectedBranch.department_id || null);
+                                            // Fetch classes for this branch
+                                            fetchClassesForBranch(selectedBranch.id);
+                                        }
+                                    }}
                                     disabled={isSubmitting || authLoading || loadingData}
-                                    variant="academic"
+                                    error={errors.branch}
                                     searchable={true}
-                                    testID="class-level-picker"
+                                    testID="branch-picker"
                                 />
 
-                                {classLevel.startsWith('grad_year') && (
+                                {branch && (
                                     <SelectPicker
-                                        label="Branch"
-                                        value={branch}
-                                        items={branches.map(b => ({ 
-                                            label: b.name, 
-                                            value: b.name,
-                                            icon: 'briefcase-outline' as const
+                                        label="Class / Year"
+                                        value={classLevel}
+                                        items={classes.map(c => ({ 
+                                            label: c.name, 
+                                            value: c.value,
+                                            description: c.academic_year ? `Year: ${c.academic_year}` : undefined,
+                                            icon: c.value.includes('grad') ? 'school-outline' : 'library-outline'
                                         }))}
-                                        onValueChange={(value) => setBranch(value)}
+                                        onValueChange={(value) => setClassLevel(value)}
                                         disabled={isSubmitting || authLoading || loadingData}
-                                        error={errors.branch}
-                                        testID="branch-picker"
+                                        variant="academic"
+                                        searchable={true}
+                                        testID="class-level-picker"
                                     />
                                 )}
                             </>

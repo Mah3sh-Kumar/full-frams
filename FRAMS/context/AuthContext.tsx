@@ -18,8 +18,8 @@ export type SignUpPayload = {
     password: string;
     enrollmentNumber?: string;
     classId?: string;
-    classLevel?: string;
-    branch?: string;
+    branchId?: string;
+    departmentId?: string;
     department?: string;
 };
 
@@ -261,8 +261,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     userId,
                     payload.enrollmentNumber,
                     payload.classId || null,
-                    payload.classLevel || null,
-                    payload.branch || null
+                    payload.branchId || null,
+                    payload.departmentId || null
                 );
 
                 if (studentError) {

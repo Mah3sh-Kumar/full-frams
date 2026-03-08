@@ -20,11 +20,17 @@ class Colors:
     
     SUCCESS = "#10b981"      # Emerald
     SUCCESS_HOVER = "#059669"
+    SUCCESS_LIGHT = "#d1fae5"  # Light emerald for backgrounds
     
     DANGER = "#ef4444"       # Red
     DANGER_HOVER = "#dc2626"
+    DANGER_LIGHT = "#fee2e2"  # Light red for backgrounds
     
     INFO = "#3b82f6"         # Blue
+    
+    WARNING = "#f59e0b"      # Amber/Orange
+    WARNING_HOVER = "#d97706"
+    WARNING_LIGHT = "#fef3c7"  # Light amber for backgrounds
     
     # Borders
     BORDER = "#1e293b"
@@ -63,6 +69,28 @@ class Styles:
             color: {Colors.ACCENT};
         }}
         
+        QLabel#PageTitle {{
+            font-size: 24px;
+            font-weight: 700;
+            color: {Colors.TEXT_MAIN};
+        }}
+        
+        QLabel#StepIndicator {{
+            font-size: 14px;
+            font-weight: 600;
+            color: {Colors.TEXT_SUB};
+            padding: 8px 16px;
+            background-color: {Colors.BG_CARD};
+            border-radius: 8px;
+        }}
+        
+        QLabel#StudentName {{
+            font-size: 18px;
+            font-weight: 700;
+            color: {Colors.TEXT_MAIN};
+            margin-bottom: 8px;
+        }}
+        
         QLineEdit, QComboBox, QDateEdit {{
             background-color: {Colors.BG_INPUT};
             border: 1px solid {Colors.BORDER_BRIGHT};
@@ -99,6 +127,18 @@ class Styles:
         
         QPushButton#PrimaryButton:hover {{
             background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 {Colors.ACCENT_HOVER}, stop:1 {Colors.ACCENT});
+        }}
+        
+        QPushButton#SecondaryButton {{
+            background-color: {Colors.BG_INPUT};
+            color: {Colors.TEXT_MAIN};
+            border: 1px solid {Colors.BORDER_BRIGHT};
+            border-radius: 10px;
+        }}
+        
+        QPushButton#SecondaryButton:hover {{
+            background-color: {Colors.BORDER_BRIGHT};
+            border: 1px solid {Colors.ACCENT};
         }}
         
         QPushButton#SuccessButton {{
@@ -200,5 +240,27 @@ class Styles:
         QPushButton:hover {{
             border: 2px solid {{accent_color}};
             background-color: rgba(255, 255, 255, 0.03);
+        }}
+    """
+    
+    GROUP_BOX_STYLE = f"""
+        QGroupBox {{
+            font-weight: 700;
+            border: 1px solid {Colors.GLASS_BORDER};
+            border-radius: 16px;
+            margin-top: 20px;
+            padding-top: 20px;
+            background-color: {Colors.GLASS_BG};
+            color: {Colors.TEXT_MAIN};
+        }}
+        
+        QGroupBox::title {{
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            left: 15px;
+            padding: 0 10px;
+            color: {Colors.ACCENT};
+            font-size: 14px;
+            font-weight: 700;
         }}
     """

@@ -4,9 +4,10 @@ Secure entry point for Teachers and Admins
 """
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLabel, QLineEdit, QFrame, QMessageBox, QGraphicsDropShadowEffect
+    QLabel, QLineEdit, QFrame, QMessageBox, QGraphicsDropShadowEffect,
+    QGraphicsOpacityEffect
 )
-from PySide6.QtCore import Qt, Signal, Property, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, Signal, Property, QPropertyAnimation, QEasingCurve, QTimer
 from PySide6.QtGui import QColor, QFont
 from .styles import Colors, Styles
 from database import SupabaseClient
@@ -20,7 +21,9 @@ class LoginWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.db = SupabaseClient()
+        self._opacity = 1.0
         self._init_ui()
+        self._setup_animations()
         
     def _init_ui(self):
         """Initialize UI components with rich aesthetics"""
@@ -108,6 +111,74 @@ class LoginWidget(QWidget):
         # Allow pressing Enter to login
         self.password_input.returnPressed.connect(self._handle_login)
         self.email_input.returnPressed.connect(self._handle_login)
+        
+        # Install event filters after all widgets are created
+        self.email_input.installEventFilter(self)
+        self.password_input.installEventFilter(self)
+        self.login_btn.installEventFilter(self)
+    
+    def _setup_animations(self):
+        """Setup animations for the login card"""
+        # Opacity effect for fade-in
+        self.opacity_effect = QGraphicsOpacityEffect(self.card)
+        self.card.setGraphicsEffect(self.opacity_effect)
+        self.opacity_effect.setOpacity(0)
+        
+        # Fade-in animation
+        self.fade_animation = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self.fade_animation.setDuration(800)
+        self.fade_animation.setStartValue(0)
+        self.fade_animation.setEndValue(1)
+        self.fade_animation.setEasingCurve(QEasingCurve.OutCubic)
+        
+    def eventFilter(self, obj, event):
+        """Handle button hover and input focus animations"""
+        if obj == self.login_btn:
+            if event.type() == event.Type.Enter:
+                self._animate_button_hover(True)
+            elif event.type() == event.Type.Leave:
+                self._animate_button_hover(False)
+        elif obj in (self.email_input, self.password_input):
+            if event.type() == event.Type.FocusIn:
+                self._animate_input_focus(obj, True)
+            elif event.type() == event.Type.FocusOut:
+                self._animate_input_focus(obj, False)
+        return super().eventFilter(obj, event)
+    
+    def _animate_input_focus(self, input_field, focus_in):
+        """Animate input field on focus"""
+        if focus_in:
+            input_field.setStyleSheet(f"""
+                QLineEdit {{
+                    background-color: {Colors.BG_CARD};
+                    border: 2px solid #667eea;
+                    border-radius: 10px;
+                    padding: 12px 16px;
+                    font-size: 14px;
+                    color: {Colors.TEXT_MAIN};
+                }}
+            """)
+        else:
+            input_field.setStyleSheet("")  # Reset to default
+    
+    def _animate_button_hover(self, hover_in):
+        """Animate button on hover"""
+        # Create a subtle scale effect using stylesheet
+        if hover_in:
+            self.login_btn.setStyleSheet("""
+                QPushButton#PrimaryButton {
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #667eea, stop:1 #764ba2);
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 15px;
+                    font-weight: 600;
+                    transform: scale(1.02);
+                }
+            """)
+        else:
+            self.login_btn.setStyleSheet("")  # Reset to default style
 
     def _handle_login(self):
         """Perform login via Supabase"""
@@ -142,7 +213,17 @@ class LoginWidget(QWidget):
     def showEvent(self, event):
         """Fade in effect when shown"""
         super().showEvent(event)
-        self.card.setGraphicsEffect(None) # Reset for animation
-        # Re-apply shadow after a tiny delay or just use opacity
-        # (Simplified for now)
-        pass
+        # Trigger fade-in animation
+        QTimer.singleShot(100, self.fade_animation.start)
+        
+        # Re-apply shadow after animation
+        QTimer.singleShot(900, self._apply_shadow)
+    
+    def _apply_shadow(self):
+        """Apply shadow effect after fade-in"""
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(40)
+        shadow.setXOffset(0)
+        shadow.setYOffset(10)
+        shadow.setColor(QColor(0, 0, 0, 150))
+        self.card.setGraphicsEffect(shadow)

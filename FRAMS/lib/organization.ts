@@ -41,11 +41,13 @@ export interface ClassItem extends OrganizationItem {
   value: string;
   display_order: number;
   academic_year: string | null;
+  branch_id: string | null;
 }
 
 export interface BranchItem extends OrganizationItem {
   code: string;
   class_id: string | null;
+  department_id: string | null;
   display_order: number;
 }
 

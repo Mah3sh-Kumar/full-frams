@@ -147,14 +147,17 @@ class FaceRecognizer:
                     student_id = student['id']
                     self.known_faces[student_id] = embedding
                     
-                    # Store student info
+                    # Store student info using new schema fields
                     user_data = student.get('users', {})
+                    class_data = student.get('classes', {})
+                    branch_data = student.get('branches', {})
+                    
                     self.student_info[student_id] = {
                         'id': student_id,
                         'enrollment_number': student.get('enrollment_number', 'N/A'),
                         'name': user_data.get('full_name', 'Unknown'),
-                        'class': student.get('class_level', 'N/A'),
-                        'branch': student.get('branch', 'N/A')
+                        'class': class_data.get('name', 'N/A') if class_data else 'N/A',
+                        'branch': branch_data.get('name', 'N/A') if branch_data else 'N/A'
                     }
                     
                     loaded_count += 1
