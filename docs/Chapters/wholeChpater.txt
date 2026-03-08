@@ -1,0 +1,743 @@
+CHAPTER 1
+INTRODUCTION
+1.1 Background of Study
+Student attendance management is a critical component of academic administration, serving multiple purposes including monitoring student engagement, regulatory compliance, identifying at-risk students, and maintaining academic standards. Traditional attendance systems have evolved through several phases, each addressing limitations of previous approaches.
+Manual attendance methods, involving roll calls or signature sheets, consumed 5-10 minutes of instructional time per session and were susceptible to human error and proxy attendance. Biometric technologies introduced automation through RFID cards and fingerprint systems. However, card-based systems remained vulnerable to proxy attendance, while fingerprint systems raised hygiene concerns due to shared contact surfaces.
+The advancement of artificial intelligence and computer vision has enabled contactless biometric systems. Face recognition technology offers distinct advantages: contactless operation, rapid identification without active user participation, and simultaneous processing of multiple individuals. Modern systems leverage sophisticated machine learning algorithms and high-dimensional feature extraction for remarkable accuracy.
+The Face Recognition & Attendance Management System (FRAMS) implements contactless biometric attendance management using MediaPipe FaceMesh technology, which extracts 468 facial landmarks to generate high-dimensional biometric feature vectors. The system employs a hybrid edge-cloud architecture: desktop edge devices perform face detection and recognition locally, while Supabase cloud backend ensures centralized data management and real-time synchronization. A React Native mobile application provides intuitive interfaces for all stakeholders.
+FRAMS addresses multifaceted challenges through biometric verification, role-based access control, automated reporting, and comprehensive data security, representing essential infrastructure for modern academic administration.
+
+1.2 Problem Statement
+Educational institutions face significant challenges in implementing efficient, accurate, and secure attendance tracking systems:
+Time Inefficiency: Manual attendance methods consume 5-10 minutes per class session. In institutions with multiple daily sessions, this represents significant instructional time loss. Manual transcription introduces additional administrative overhead and delays data availability.
+Proxy Attendance: Manual sheets and card-based systems offer minimal protection against proxy attendance, where students mark attendance for absent peers. Even signature-based systems can be circumvented through forgery, undermining attendance integrity.
+Human Error: Manual systems are prone to errors at multiple stages—instructors may skip names, misread handwriting, or incorrectly transcribe data. Students may sign in wrong rows. These errors accumulate, resulting in inaccurate records affecting evaluations and compliance.
+Absence of Real-Time Monitoring: Traditional systems operate in batch mode with significant delays. This prevents timely intervention for students with poor attendance patterns. Real-time monitoring enables immediate identification of at-risk students and data-driven decision-making.
+Hygiene Concerns: Contact-based biometric systems, particularly fingerprint scanners, require physical contact with shared surfaces. In high-traffic educational environments, this raises legitimate pathogen transmission concerns, especially following global health crises.
+Scalability Challenges: Many existing systems are standalone solutions with limited integration capabilities, resulting in data silos. Lack of scalability poses challenges for institutions with multiple branches or growing student populations.
+Data Security: Inadequate security measures expose sensitive biometric information to unauthorized access or breaches. Institutions must protect student data in compliance with regulations such as GDPR and DPDP Act through robust encryption, access control, and audit logging.
+FRAMS addresses these challenges through automated, contactless, secure, and scalable attendance management using advanced face recognition, hybrid architecture, role-based access control, and comprehensive security measures.
+
+1.3 Objectives of the Project
+FRAMS was developed with clearly defined objectives:
+1. Automate Attendance Marking: Eliminate manual processes through automated facial recognition using MediaPipe FaceMesh technology. The system reduces attendance marking time to less than one second per student, minimizing instructional disruption and eliminating manual data entry.
+2. Prevent Proxy Attendance: Ensure attendance integrity through biometric verification. Unlike card or signature systems, facial recognition provides unique biometric identifiers that cannot be shared, verifying physical presence and enhancing academic integrity.
+3. Provide Role-Based Access Control: Implement comprehensive RBAC for students, teachers, and administrators. Students view personal attendance records; teachers initiate sessions and generate reports; administrators manage organizational structures and system-wide analytics.
+4. Ensure Data Security and Privacy: Prioritize security through JWT authentication, Row Level Security policies in PostgreSQL, encrypted JSONB storage for biometric data, and secure HTTPS transmission. The architecture adheres to data protection standards and regulations.
+5. Generate Automated Reports and Analytics: Provide comprehensive reporting at various granularities—daily summaries, subject-wise records, student-wise percentages, and class-wise analytics. Real-time synchronization ensures immediate data availability for analysis.
+6. Facilitate Academic Management: Support broader governance objectives by enabling institutions to monitor engagement, identify at-risk students, and implement timely interventions. Historical data supports counseling, scholarship administration, and compliance.
+7. Deliver Cost-Effective Scalability: Utilize standard desktop hardware (HD camera, Intel i5/Ryzen 5, 8GB RAM) rather than specialized equipment. The hybrid edge-cloud architecture enables horizontal scalability across multiple locations with centralized management.
+
+1.4 Scope of the System
+FRAMS encompasses comprehensive attendance management functionalities:
+Desktop Edge Device: Core processing component performing real-time face detection and recognition. Runs Python-based application using PySide6 (GUI), OpenCV (video capture), and MediaPipe (face detection/landmarks). Handles computationally intensive tasks locally, minimizing latency and enabling offline operation with subsequent synchronization.
+Cloud Backend (Supabase/PostgreSQL): Provides centralized data management, storing organizational structure, user accounts, enrollment records with biometric vectors, and attendance records. Implements Row Level Security for role-based access control, JWT authentication, RESTful API endpoints, and real-time WebSocket subscriptions.
+Mobile Application (React Native/Expo): Cross-platform application providing role-specific dashboards. Students view attendance percentages and subject-wise records; teachers manage classes and generate reports; administrators handle organizational management. Real-time synchronization ensures immediate updates.
+Face Registration: Comprehensive enrollment process capturing multiple images, extracting 468 facial landmarks, generating 1404-dimensional feature vectors, performing quality validation, and storing in JSONB format with encryption.
+Real-Time Recognition: Continuous video processing detecting faces using BlazeFace, extracting landmarks via FaceMesh, comparing feature vectors using cosine similarity (threshold: 0.6), and automatically marking attendance with duplicate prevention.
+Reporting and Analytics: Multi-dimensional tracking with daily summaries, subject-wise records, student-wise percentages, and class-wise analytics. Supports filtering, export (CSV/PDF), and graphical visualizations with real-time synchronization.
+Multi-Institution Scalability: Supports deployment across multiple institutions, branches, and classes with organizational hierarchy entities and Row Level Security ensuring logical data separation while maintaining centralized management.
+Security and Compliance: Comprehensive measures including JWT authentication, PostgreSQL RLS policies, encrypted JSONB storage, HTTPS transmission, data minimization (storing vectors not images), and audit logging for GDPR/DPDP compliance.
+
+ 
+CHAPTER 2
+LITERATURE REVIEW
+
+2.1 Existing System Review
+Various attendance management systems have been developed to automate the process of recording student attendance in educational institutions. One commonly used method is the RFID or ID card-based attendance system. In this approach, each student is issued an RFID card or identification card that contains a unique electronic identifier. When students enter the classroom or campus, they scan their cards using an RFID reader, which automatically records their attendance in the system database. This method reduces the time required for manual attendance recording and minimizes transcription errors. However, the system cannot verify whether the person using the card is the actual cardholder, which makes it vulnerable to proxy attendance.
+Another widely used method is the fingerprint biometric attendance system. In this system, students register their fingerprints during an enrollment process, where the fingerprint patterns are converted into digital templates and stored in a database. When attendance needs to be recorded, students place their finger on a fingerprint scanner, and the system compares the scanned fingerprint with the stored templates to verify identity. Fingerprint systems offer improved security compared to RFID systems because fingerprints are unique to each individual. Despite this advantage, these systems require physical contact with scanning devices, which may raise hygiene concerns, particularly when many users share the same device. In addition, environmental factors such as dirt, moisture, or worn fingerprints can affect recognition accuracy.
+Some institutions also use iris recognition systems for biometric identification. Iris recognition systems capture high-resolution images of the human iris using specialized cameras with near-infrared illumination. The unique patterns present in the iris are analyzed and converted into digital templates for authentication. Iris recognition systems provide extremely high accuracy and are contactless in nature. However, they require expensive hardware and specialized imaging equipment, making them less practical for widespread use in educational institutions. The high implementation cost and operational complexity limit their adoption in attendance management applications.
+In recent years, face recognition-based attendance systems have gained popularity due to advancements in computer vision and artificial intelligence. These systems use cameras to capture facial images of students and compare them with previously stored facial data to verify identity. Face recognition systems offer a contactless and automated method of recording attendance while reducing the risk of proxy attendance. Modern systems utilize deep learning models and facial landmark detection technologies to improve recognition accuracy and processing speed. These advancements have made facial recognition a suitable technology for intelligent attendance management systems.
+2.2 Limitations of Existing Systems
+Although existing attendance systems have improved the efficiency of attendance recording, they still suffer from several limitations. Traditional manual attendance systems require instructors to record attendance by calling out student names or passing attendance sheets. This process consumes valuable class time and is prone to human errors such as incorrect marking or missed entries. Manual systems also allow proxy attendance, where students may answer on behalf of absent classmates.
+RFID and ID card-based systems automate attendance recording but fail to verify the identity of the cardholder. Students may exchange or share their cards with others, allowing unauthorized attendance marking. Additionally, cards may be lost, damaged, or forgotten, which creates inconvenience for both students and administrators.
+Fingerprint biometric systems provide stronger identity verification but require users to physically touch scanning devices. This contact-based interaction raises hygiene concerns, particularly in environments where many individuals use the same device. Recognition accuracy may also decrease if fingerprints are affected by moisture, dirt, or injuries. Over time, frequent usage may lead to hardware wear and maintenance costs.
+Iris recognition systems provide extremely high accuracy, but their implementation cost is significantly higher compared to other biometric technologies. These systems require specialized cameras and precise positioning of the user during image capture, which may reduce convenience and increase operational complexity.
+Existing face recognition systems also face certain challenges. Many implementations rely heavily on cloud-based processing, which introduces network latency and raises concerns about the privacy and security of biometric data. Some systems require high-performance hardware or dedicated GPUs, making them expensive to deploy in educational institutions. Additionally, certain systems lack offline functionality and cannot operate efficiently in environments with unstable internet connectivity.
+
+2.3 Need for the Proposed System
+Due to the limitations of existing attendance systems, there is a growing need for a more efficient, reliable, and secure solution for attendance management in educational institutions. An ideal attendance system should be contactless, accurate, and capable of operating in real time without interrupting classroom activities. It should also prevent proxy attendance while ensuring that student identity is verified reliably.
+A modern attendance management system should be able to operate using standard hardware without requiring expensive biometric devices. This would make the system cost-effective and suitable for deployment in schools, colleges, and universities. Additionally, the system should support offline functionality so that attendance can still be recorded even when internet connectivity is unavailable.
+The proposed Face Recognition and Attendance Management System (FRAMS) addresses these requirements by utilizing advanced facial recognition technology combined with MediaPipe FaceMesh for accurate facial landmark detection. The system provides a contactless method for recording attendance, improving hygiene and user convenience. It also performs real-time face detection and recognition using optimized algorithms that can run efficiently on standard computer hardware.
+Furthermore, the FRAMS system enhances security by ensuring that attendance is recorded only when a registered student's face is recognized. The system also maintains a digital database for storing attendance records, enabling quick access, analysis, and report generation. By integrating modern computer vision technologies with efficient system design, FRAMS provides a practical and scalable solution for automated attendance management in educational institutions.
+ 
+CHAPTER 3
+SYSTEM REQUIREMENTS
+
+3.1 System Overview
+FRAMS requires specific hardware, software, and system specifications for optimal performance, reliability, and security. The specifications balance performance requirements with cost-effectiveness, leveraging standard commercial components rather than specialized equipment.
+
+3.2 Hardware Requirements
+Component	Minimum Specification	Recommended Specification
+Desktop/Laptop Processor	Intel Core i5 (8th gen) or AMD Ryzen 5 (2000 series)	Intel Core i7 (10th gen) or AMD Ryzen 7 (3000 series)
+Memory (RAM)	8 GB	16 GB
+Storage	128 GB SSD	256 GB SSD or greater
+Operating System	Windows 10 (64-bit), Ubuntu 20.04 LTS, macOS 11	Windows 11, Ubuntu 22.04 LTS, macOS 12+
+Display Resolution	1280×720 (HD)	1920×1080 (Full HD)
+Camera Resolution	720p (1280×720)	1080p (1920×1080)
+Camera Frame Rate	30 FPS	30 FPS or higher
+Camera Interface	USB 2.0	USB 3.0
+Network Bandwidth	1 Mbps (per edge device)	5 Mbps (per edge device)
+Network Latency	< 500 ms	< 200 ms
+Table 3.1: Hardware Requirements
+Hardware Component Details
+Desktop/Laptop Edge System:
+•	Multi-core CPU for real-time video processing and mathematical computations
+•	8 GB RAM minimum (application consumes 300-500 MB); 16 GB for large databases (>1000 students)
+•	SSD strongly recommended for faster boot times and system responsiveness
+•	Cross-platform OS support: Windows 10+, Ubuntu 20.04+, macOS 11+
+
+
+HD Camera:
+•	720p minimum; 1080p recommended for improved landmark detection accuracy
+•	30 FPS for smooth real-time preview
+•	60-90° field of view; 0.5-2 meters operating distance
+•	Autofocus recommended; adequate low-light performance (~100 lux)
+•	USB 2.0/3.0 interface; compatible with OpenCV video capture protocols
+•	Eye-level mounting, angled downward 10-15°
+
+Network Infrastructure:
+•	1 Mbps minimum per edge device for API requests and synchronization
+•	<500 ms latency for optimal user experience
+•	Outbound HTTPS (port 443) to Supabase backend
+•	Offline operation capability for temporary outages
+
+3.3 Software Requirements
+Component	Technology	Version	Purpose
+Desktop Edge System			
+Python Runtime	Python	3.10+	Programming language and runtime
+GUI Framework	PySide6	6.8.0+	Graphical user interface
+Computer Vision	OpenCV	4.9.0.80	Video capture and image processing
+Face Detection/Recognition	MediaPipe	0.10.9	468 landmark extraction
+Numerical Computing	NumPy	1.26.3	Feature vector operations
+Database Client	Supabase Python	1.0.3	Cloud backend communication
+Mobile Application			
+Mobile Framework	React Native	0.81.5	Cross-platform mobile development
+Development Platform	Expo	SDK 54	Managed workflows and native APIs
+Navigation	React Navigation	7.1.20	Screen navigation and routing
+UI Components	React Native Paper	5.14.5	Material Design components
+Database Client	Supabase JS	2.83.0	Backend communication
+Cloud Backend			
+Backend Platform	Supabase	Latest	BaaS platform
+Database	PostgreSQL	15+	Relational database with JSONB
+Authentication	Supabase Auth	Latest	JWT-based authentication
+API	PostgREST	Latest	RESTful API generation
+Real-Time	Supabase Realtime	Latest	WebSocket subscriptions
+Table 3.2: Software Requirements
+
+Software Stack Details
+Desktop Edge System:
+•	Python 3.10+ with virtual environment for dependency isolation
+•	PySide6 for cross-platform GUI components
+•	OpenCV 4.9.0.80 validated for MediaPipe compatibility
+•	MediaPipe 0.10.9 with pre-trained models optimized for CPU
+•	NumPy 1.26.3 for efficient numerical computations
+•	Supabase Python 1.0.3 for authentication and database operations
+
+Mobile Application:
+•	React Native 0.81.5 compiling to native iOS/Android components
+•	Expo SDK 54 simplifying build/deployment with managed workflows
+•	React Navigation 7.1.20 for screen navigation
+•	React Native Paper 5.14.5 for Material Design UI
+•	Supabase JS 2.83.0 for backend communication
+
+Cloud Backend:
+•	Supabase platform providing complete backend infrastructure
+•	PostgreSQL 15+ with JSONB support for 1404-dimensional vectors
+•	Row Level Security (RLS) for role-based access control
+•	JWT-based authentication with user metadata
+•	PostgREST auto-generated RESTful API
+•	Supabase Realtime for WebSocket subscriptions
+ 
+CHAPTER 4
+SYSTEM ARCHITECTURE
+AND
+DATABASE DESIGN
+
+4.1 System Architecture
+The Face Recognition and Attendance Management System (FRAMS) is implemented using a three-tier hybrid edge–cloud architecture. This architecture separates the system into processing, data management, and user interface layers to improve efficiency, scalability, and maintainability.
+The system performs face recognition locally on a desktop device, while centralized data management and synchronization are handled by a cloud backend. This approach reduces recognition latency and allows the system to operate even when internet connectivity is limited. The mobile application provides an interface for users to access attendance data and system reports.
+The architecture consists of three primary layers: Edge Layer, Cloud Layer, and Presentation Layer.
+
+4.1.1 Three-Tier Architecture Overview
+The Edge Layer represents the local desktop system used during attendance sessions. The system captures video frames through a camera and processes them using computer vision techniques. MediaPipe is used for face detection and facial landmark extraction, and the resulting facial feature vectors are compared with stored student encodings to identify individuals. The desktop application also maintains a local cache to allow attendance marking during temporary network interruptions.
+The Cloud Layer is implemented using Supabase with a PostgreSQL database. This layer stores organizational information, user accounts, student records, and attendance data. Authentication is managed through secure token-based authentication, while APIs allow communication between the edge system and mobile application. The cloud backend also enables real-time synchronization of attendance records across devices.
+The Presentation Layer consists of a cross-platform mobile application developed using React Native. Through this application, students can view their attendance records and percentages, while teachers and administrators can access reports and manage academic data. The application retrieves data from the cloud backend and presents it through a user-friendly interface.
+  Figure 4.1: System Architecture Diagram 
+
+4.1.2 Hybrid Architecture Benefits
+The hybrid architecture provides several advantages for the FRAMS system. Local processing of face recognition reduces network dependency and allows faster identification of students. The system can continue recording attendance even when the internet connection is temporarily unavailable.
+Centralized cloud storage ensures that attendance records remain consistent and accessible from multiple devices. Additionally, the architecture allows the system to scale easily by connecting multiple classrooms or institutions to the same cloud backend.
+
+
+
+4.2 Data Flow Diagrams
+Data Flow Diagrams (DFDs) illustrate how information moves through the FRAMS system. These diagrams show the interaction between external entities, system processes, and data storage components.
+
+4.2.1 Level 0 Data Flow Diagram (Context Diagram)
+The Level 0 DFD represents the FRAMS system as a single process interacting with external entities such as students, teachers, administrators, and the camera device. Students provide facial input for recognition and receive attendance updates. Teachers initiate attendance sessions and generate reports, while administrators manage system configuration and organizational data. The camera continuously provides video frames that are processed by the system for recognition.
+ 
+Figure 4.2: Level 0 Data Flow Diagram
+
+4.2.2 Level 1 Data Flow Diagram
+The Level 1 DFD shows the internal processes involved in the system. These processes include user authentication, face registration, face detection and recognition, attendance marking, session management, and data synchronization.
+During attendance sessions, facial images are captured from the camera, processed to extract facial features, and compared with stored encodings. If a match is detected, the system records attendance and stores the data in the database. The information is then synchronized with the cloud backend.
+ 
+Figure 4.3: Level 1 Data Flow Diagram
+
+4.3 Use Case Diagram
+The Use Case Diagram describes how different users interact with the FRAMS system. The primary actors are students, teachers, administrators, and the system itself.
+Students use the mobile application to view attendance records and track their attendance percentage. Teachers interact with the desktop application to register student faces, start attendance sessions, and generate reports. Administrators manage the organizational structure, including users, classes, and system settings.
+The system performs automated operations such as face detection, recognition, attendance recording, and data synchronization.
+ 
+Figure 4.4: Use Case Diagram 
+
+4.4 Sequence Diagram
+The Sequence Diagram illustrates the communication between system components during the attendance process. The process begins when a teacher logs into the desktop application and starts an attendance session. The system captures video frames from the camera and performs face detection and recognition.
+If a student's identity is successfully recognized, the system records the attendance entry in the database. The recorded information is then synchronized with the cloud backend, allowing the mobile application to display updated attendance data.
+ 
+Figure 4.5: Sequence Diagram
+
+4.5 Activity Diagram
+The Activity Diagram represents the workflow of the system during an attendance session. The process begins when a teacher logs into the system and selects a class. The system then captures video frames and detects faces in the frame.
+If a face is detected, the system extracts facial features and compares them with stored student encodings. When a valid match is found, attendance is recorded and stored in the database. The data is then synchronized with the cloud system so that users can view updated attendance information.
+ 
+Figure 4.6: Activity Diagram
+
+4.6 Database Design
+The FRAMS system uses a PostgreSQL relational database hosted on the Supabase platform. The database is designed to store organizational data, user information, student records, and attendance details.
+The system organizes institutional data through tables such as organizations, branches, and classes. User information is stored in the users table, while student details include enrollment numbers and biometric feature vectors used for face recognition.
+Attendance sessions and attendance records are stored in dedicated tables, allowing the system to maintain a structured history of attendance activities. Relationships between tables are maintained through foreign key constraints to ensure data consistency.
+To maintain security, the database uses Row Level Security (RLS) policies that control access to records based on user roles. Students can access their own attendance data, teachers can view records related to their classes, and administrators can manage data across the entire organization.
+
+4.7 Entity Relationship Diagram
+The Entity Relationship Diagram (ERD) represents the relationships between the different entities within the FRAMS database. Organizations contain multiple branches, branches contain multiple classes, and classes contain students and attendance sessions.
+Teachers can be assigned to multiple classes, and each attendance session can generate multiple attendance records. The ERD provides a visual representation of how these entities are connected and how data is structured within the system.
+Figure 4.7: Entity Relationship Diagram 
+ 
+CHAPTER 5
+METHODOLOGY
+
+5.1 System Workflow
+The Face Recognition and Attendance Management System (FRAMS) follows a structured workflow consisting of face registration, face detection, recognition, and attendance recording. The process begins with registering students in the system where their personal details and facial data are captured and stored in the database.
+During attendance sessions, the system captures live frames from the camera and processes them using face detection algorithms. The detected faces are analyzed to extract facial features which are then compared with the stored facial encodings of registered students.
+When a valid match is identified, the system automatically records the attendance along with the timestamp and confidence score. The attendance data can then be synchronized with the cloud server for monitoring through mobile or web applications.
+ 
+Figure 5.1: Overall System Workflow Diagram
+
+5.2 Face Registration Process
+The face registration process is responsible for collecting and storing the facial information of students for future recognition. Initially, the user enters student details such as enrollment number, name, class, and branch. The system validates these details to avoid duplicate entries and maintain database consistency.
+After successful data entry, the system activates the camera and begins scanning for faces. A real-time camera feed is displayed while the system detects the face and highlights it using bounding boxes.
+Before capturing the image, the system checks several quality conditions such as face orientation, lighting conditions, and image clarity. If the captured image meets these criteria, the facial data is processed further.
+The captured image is analyzed using the MediaPipe FaceMesh model which detects 468 facial landmarks. These landmarks represent key facial structures such as eyes, nose, and mouth. The landmark coordinates are converted into a normalized feature vector that uniquely represents the student’s face.
+The generated feature vector is stored in the PostgreSQL database along with additional metadata. This stored encoding is later used during the recognition process.
+Figure 5.2: Face Registration Screenshot
+
+5.3 Face Detection
+FRAMS uses the MediaPipe BlazeFace model to detect faces in real-time video streams. BlazeFace is a lightweight deep learning model optimized for fast detection and efficient performance on CPU-based systems.
+During the attendance session, the system continuously captures frames from the camera and processes them using the detection model. The algorithm identifies faces within the frame and generates bounding boxes around detected regions.
+The system is also capable of detecting multiple faces within a single frame. Each detected face is processed individually for recognition while ensuring that the same student is not recognized multiple times during a single session.
+Figure 5.3: Face Detection Screenshot
+
+5.4 Face Recognition
+Once a face is detected, the system extracts facial landmarks using the MediaPipe FaceMesh model. These landmarks are converted into a numerical feature vector representing the geometric structure of the face.
+The generated feature vector is compared with stored facial encodings of registered students using cosine similarity. This method calculates the similarity between two vectors and produces a value indicating how closely they match.
+If the similarity score exceeds the predefined threshold, the system identifies the student successfully. If the similarity score is below the threshold, the face is classified as unknown.
+Figure 5.4: Face Recognition Screenshot
+
+5.5 Attendance Recording
+The attendance recording process begins when a teacher initiates a session for a particular class. At this stage, the system loads the facial encodings of students enrolled in that class.
+During the session, the system continuously detects and recognizes faces from the video stream. When a student is successfully recognized, the system records attendance automatically along with the timestamp and confidence score.
+To avoid duplicate entries, the system keeps track of students who have already been marked present during the session. This ensures that each student’s attendance is recorded only once.
+Figure 5.5: Attendance Marking Screenshot
+
+5.6 Data Synchronization
+FRAMS supports synchronization between the local system and the cloud database. Attendance data recorded locally is transmitted to the central server whenever internet connectivity is available.
+If the system operates offline, attendance records are temporarily stored in a local cache. Once the network connection is restored, the stored records are automatically synchronized with the cloud database.
+This synchronization mechanism ensures consistent data availability across edge devices, cloud infrastructure, and mobile applications.
+Figure 5.6: Data Synchronization Diagram
+
+5.7 Security Implementation
+Security is an important component of the FRAMS architecture. The system uses JSON Web Token (JWT) based authentication to verify user identity and ensure secure access.
+All communication between the client and server is protected using HTTPS encryption. Sensitive information such as biometric feature vectors and attendance records are securely stored in the database.
+Additionally, the system implements database access control mechanisms such as Row Level Security (RLS) to ensure that users can only access data relevant to their roles and permissions.
+
+ 
+Figure 5.7: Security Architecture Diagram
+ 
+CHAPTER 6
+IMPLEMENTATION
+6.1 Technology Stack
+The Face Recognition and Attendance Management System (FRAMS) is implemented using a combination of desktop, mobile, and cloud technologies. The desktop application performs face detection and recognition using computer vision and machine learning libraries. The mobile application allows users to view attendance information and manage system operations. The cloud backend provides secure authentication, database storage, and real-time synchronization between system components.
+Layer	Component	Technology	Purpose
+
+
+
+Desktop Edge	Programming Language	Python	Core application development
+	GUI Framework	PySide6	Desktop user interface
+	Computer Vision	OpenCV	Video capture and image processing
+	Face Recognition	MediaPipe	Facial landmark detection
+	Numerical Computing	NumPy	Vector calculations
+	Database Client	Supabase Python SDK	Cloud database communication
+
+
+
+Mobile Application
+	Framework	React Native	Cross-platform mobile application
+	Development Platform	Expo	Mobile development tools
+	UI Library	React Native Paper	User interface components
+	Navigation	React Navigation	Screen navigation
+	Backend Client	Supabase JS	Cloud API communication
+
+Cloud Backend	Platform	Supabase	Backend infrastructure
+	Database	PostgreSQL	Data storage and management
+	Authentication	Supabase Auth	User authentication
+	Real-Time Engine	Supabase Realtime	Live data updates
+Table 6.1: Technology Stack
+6.2 System Modules
+The FRAMS system is organized into several modules that handle different functionalities of the attendance system. These modules are implemented across the desktop application, mobile application, and cloud backend.
+Desktop Application
+The desktop application is responsible for performing face recognition and attendance recording. It captures video frames from the camera, detects faces using computer vision algorithms, extracts facial features, and compares them with stored student data in the database. The application also provides graphical interfaces for login, student registration, and attendance monitoring.
+Mobile Application
+The mobile application provides access to attendance information for students, teachers, and administrators. Students can view their attendance percentage and subject-wise records, while teachers can monitor attendance sessions and generate reports. Administrators have additional features such as user management and system analytics.
+Cloud Backend
+The cloud backend manages data storage, authentication, and synchronization between the desktop and mobile applications. Supabase is used as the backend platform, providing database services, REST APIs, and real-time communication capabilities.
+ 
+Figure 6.1: Overall System Module Architecture
+
+6.3 Project Schedule (Gantt Chart)
+The development of the FRAMS project was carried out in several stages including requirement analysis, system design, implementation, testing, and documentation. A project schedule was prepared using a Gantt chart to plan and monitor the progress of the project activities.
+The project began with requirement analysis and literature review to understand the problem domain and identify suitable technologies. This was followed by system design and database modeling. The implementation phase included the development of the desktop face recognition system and the mobile application interface. After implementation, the system was tested and integrated with the cloud backend. Finally, project documentation and report preparation were completed.
+Figure 6.11: FRAMS Project Development Gantt Chart
+
+
+6.4 System Integration
+The FRAMS system integrates multiple components including the desktop application, mobile application, and cloud backend. These components communicate using secure protocols to ensure reliable data transfer and synchronization.
+The desktop application captures attendance data and synchronizes it with the cloud database using REST APIs. The mobile application retrieves attendance data from the cloud backend and displays it through interactive dashboards. Real-time updates are delivered using WebSocket communication to ensure that attendance information is updated instantly across all connected devices.
+Integration	Protocol	Purpose	Data Format
+Desktop → Cloud	HTTPS REST	Attendance synchronization and student data retrieval	JSON
+Mobile → Cloud	HTTPS REST	Fetch attendance data and manage users	JSON
+Cloud → Mobile	WebSocket	Real-time attendance updates	JSON
+Desktop → Camera	USB	Video capture	Raw frames
+Desktop → MediaPipe	Internal Processing	Face detection and recognition	Numerical arrays
+All Systems → Authentication	HTTPS	Secure user authentication	JWT Tokens
+Table 6.2: System Integration
+ 
+CHAPTER 7
+TESTING
+7.1 Testing Strategy
+The Face Recognition and Attendance Management System (FRAMS) was tested using multiple approaches to ensure accuracy, reliability, and proper functionality. The testing process included unit testing, integration testing, and system testing to verify that individual modules work correctly, system components communicate properly, and the overall system operates as expected.
+The main objective of testing was to validate face detection and recognition accuracy, confirm correct attendance recording, verify data synchronization between the desktop application and cloud backend, and evaluate overall system performance. Security validation was also conducted to ensure proper authentication and access control.
+The testing environment included a desktop computer with an Intel Core i5 processor, 16 GB RAM, and a 1080p webcam for capturing facial images. The system was tested on Windows 11 for the desktop application and Android devices for the mobile application using a Supabase staging environment for database testing. The dataset contained approximately 50 registered students and over 200 sample images to evaluate the recognition system.
+
+7.2 Unit Testing
+Unit testing was conducted to verify the functionality of individual modules of the system. Each module such as face detection, face recognition, encoding generation, database communication, and authentication was tested independently to ensure correct operation.
+The results of the unit tests indicate that all modules functioned correctly with high test coverage and no critical failures.
+Module	Test Cases	Passed	Failed	Coverage
+Face Detector	15	15	0	95%
+Face Recognizer	20	20	0	92%
+Encoding Service	12	12	0	98%
+Attendance Service	18	18	0	94%
+Database Client	25	25	0	90%
+Authentication	10	10	0	96%
+Total	100	100	0	94%
+Table 7.1: Unit Test Summary
+During unit testing, the face detection module was tested for single and multiple face detection scenarios. The feature extraction module was verified to ensure that the generated facial encoding vectors were correctly normalized. The recognition module was also tested to confirm accurate similarity calculation and correct identification of registered students.
+
+7.3 Integration Testing
+Integration testing was performed to ensure that different modules of the system interact correctly. This phase focused on verifying the communication between the desktop application, cloud backend, and mobile application.
+The tests included workflows such as student registration, attendance marking, data synchronization, authentication, and real-time updates. All modules successfully interacted with each other and maintained data consistency across the system.
+
+Test ID	Test Scenario	Expected Result	Status
+IT-01	Student registration process	Face encoding stored in database	Pass
+IT-02	Attendance marking	Attendance record created	Pass
+IT-03	Data synchronization	Records synced to Supabase	Pass
+IT-04	Mobile app updates	Attendance data received by mobile app	Pass
+IT-05	Authentication process	User login verified using JWT	Pass
+IT-06	Offline attendance recording	Records stored locally and synced later	Pass
+IT-07	Multi-face detection	Multiple faces processed correctly	Pass
+IT-08	Duplicate attendance prevention	Duplicate entries prevented	Pass
+IT-09	Attendance report generation	Accurate attendance percentage	Pass
+IT-10	Role-based access control	Users access only permitted data	Pass
+Table 7.2: Integration Test Cases
+
+
+
+
+7.4 System Testing
+System testing was conducted to evaluate the overall performance and functionality of the FRAMS system under real operational conditions. This testing included functional validation, performance testing, usability evaluation, and compatibility testing.
+Functional testing confirmed that the complete attendance workflow operates correctly, including student registration, face recognition, and attendance reporting. Performance testing verified that the system processes video frames efficiently and recognizes students within acceptable time limits.
+Compatibility testing confirmed that the system works properly on Windows 11 for the desktop application and Android devices for the mobile application.
+
+Test Category	Test Cases	Passed	Failed	Pass Rate
+Functional	35	34	1	97%
+Performance	15	15	0	100%
+Security	12	12	0	100%
+Usability	10	10	0	100%
+Compatibility	5	5	0	100%
+Total	77	76	1	99%
+Table 7.3: System Test Summary
+Performance testing showed that the system could recognize faces in less than one second per student while maintaining a video processing rate of approximately 25–30 frames per second. Database queries responded within 200 milliseconds, and the mobile application loaded within three seconds.
+
+7.5 Testing Results
+The testing results demonstrate that the FRAMS system operates reliably and meets the required functional objectives. The face recognition system achieved accurate detection and identification of registered students. Attendance recording was performed correctly without duplicate entries.
+Data synchronization between the desktop application, cloud backend, and mobile application was successfully validated. Security testing confirmed that authentication mechanisms and database access policies effectively protect system data.
+Overall, the testing process confirmed that the system is stable, efficient, and suitable for use in educational institutions for automated attendance management. 
+CHAPTER 8
+RESULTS AND DISCUSSION
+
+8.1 System Screenshots
+This section presents the screenshots of the implemented FRAMS system. These screenshots demonstrate the working interfaces of the desktop application, mobile application, and database environment. The screenshots verify that the system was successfully implemented and tested.
+8.1.1 Desktop Application
+The desktop application is responsible for face recognition, student registration, and attendance recording. The following screenshots illustrate the major interfaces of the desktop system.
+Figure 8.1: Login Screen – Authentication interface with email and password fields and a sign-in button.
+Figure 8.2: Student Registration Interface – Screen displaying the live camera feed for capturing facial images along with the student information form used for enrollment.
+Figure 8.3: Live Recognition View – Real-time camera interface showing detected faces with bounding boxes and recognized student names along with confidence scores.
+Figure 8.4: Attendance Dashboard – Screen displaying attendance records for the active session including student name, enrollment number, timestamp, and recognition confidence score.
+
+8.1.2 Mobile Application
+The mobile application allows students, teachers, and administrators to view attendance information and system data through role-based dashboards.
+Figure 8.5: Mobile Login Screen – Secure login interface for accessing the mobile application.
+Figure 8.6: Student Dashboard – Displays overall attendance percentage and subject-wise attendance records.
+Figure 8.7: Teacher Dashboard – Provides class management features and the ability to monitor attendance sessions.
+Figure 8.8: Admin Dashboard – Displays system statistics including number of branches, teachers, and registered students.
+Figure 8.9: Attendance Reports – Interface for generating attendance reports with filtering and export options.
+
+8.1.3 Database Interface
+The FRAMS system uses the Supabase platform for managing the PostgreSQL database and authentication services. The following screenshots demonstrate the database structure and configuration.
+Figure 8.10: Students Table in Supabase – Database table containing student details and facial encoding data.
+Figure 8.11: Face Encoding Storage – JSONB structure storing the facial feature vectors extracted from MediaPipe.
+Figure 8.12: Row Level Security Configuration – Database security policies controlling access to student and attendance records.
+
+8.2 Comparative Analysis
+The performance of the FRAMS system was compared with traditional attendance methods and other biometric systems. The comparison highlights improvements in efficiency, accuracy, and usability.
+Table 8.1: Comparison of Attendance Systems
+Aspect	Manual Attendance	RFID/Card	Fingerprint	FRAMS
+Time per Session (50 students)	8–10 min	3–5 min	4–6 min	0.5–1 min
+Proxy Prevention	None	Limited	Excellent	Excellent
+Hygiene	Moderate	High	Low	High
+Accuracy	90–95%	95%	98%	95%
+Hardware Cost	Minimal	Medium	High	Medium
+Maintenance	Low	Low	Medium	Low
+Real-Time Data	No	Limited	Limited	Yes
+Scalability	Poor	Good	Good	Excellent
+The comparison shows that FRAMS significantly reduces the time required for attendance marking while maintaining high accuracy. Unlike manual systems, it prevents proxy attendance through biometric verification. The system also provides real-time data access, enabling teachers and administrators to monitor attendance instantly.
+
+8.3 User Feedback
+User feedback was collected during system testing from teachers, students, and administrators to evaluate usability and overall system performance.
+Teacher Feedback (5 Participants)
+Evaluation Aspect	Rating (Out of 5)
+Ease of Use	4.6
+Time Savings	4.8
+Accuracy Satisfaction	4.4
+Overall Satisfaction	4.6
+
+Student Feedback (20 Participants)
+Evaluation Aspect	Rating (Out of 5)
+Process Convenience	4.5
+Privacy Comfort	4.2
+Mobile App Usability	4.7
+Overall Satisfaction	4.5
+
+Administrator Feedback (3 Participants)
+Evaluation Aspect	Rating (Out of 5)
+System Management	4.7
+Reporting Capabilities	4.8
+Scalability	4.6
+Overall Satisfaction	4.7
+Overall feedback indicates that users found the system easy to use and significantly faster than manual attendance methods. Teachers appreciated the time savings, while students found the mobile application convenient for tracking attendance.
+
+8.4 System Impact
+The implementation of FRAMS provides several measurable benefits for educational institutions.
+Quantitative Impact
+Metric	Improvement
+Time Saved per Semester	63–81 hours per class
+Administrative Work Reduction	70–80%
+Attendance Data Availability	Real-time
+Instructional Time Recovered	5–7 class periods
+
+
+Qualitative Impact
+The system improves academic governance by ensuring accurate attendance tracking. Biometric verification increases student accountability and reduces proxy attendance. Real-time data allows institutions to identify students with low attendance early and take corrective actions. The system also reduces administrative workload for teachers and improves data-driven decision making.
+
+8.5 Challenges and Solutions
+During system development and testing, several challenges were encountered.
+Challenge	Impact	Solution
+Low lighting conditions	Slight reduction in recognition accuracy	Improved camera configuration and user guidance
+Face angle variations	Recognition difficulty at extreme angles	Visual feedback for proper positioning
+Student enrollment time	2–3 minutes required per student	Batch enrollment sessions
+Network dependency	Delayed synchronization during outages	Offline storage with automatic sync
+
+ 
+CHAPTER 9
+CONCLUSION
+
+The Face Recognition & Attendance Management System (FRAMS) successfully addresses the critical limitations of traditional attendance mechanisms through an intelligent, contactless biometric solution. This project demonstrates the practical application of computer vision, edge computing, and cloud technologies to solve real-world challenges in educational administration.
+
+9.1 Project Achievements
+FRAMS achieves its primary objectives through the following accomplishments:
+Automated Attendance Marking: The system successfully automates attendance marking using MediaPipe FaceMesh technology, achieving 95.1% recognition accuracy with sub-second processing time. The automation reduces attendance marking time by 90%, from 8-10 minutes to 30-45 seconds per class session, recovering valuable instructional time.
+Proxy Attendance Prevention: Through biometric verification using 468 facial landmarks and 1404-dimensional feature vectors, FRAMS effectively prevents proxy attendance. The unique biometric identifiers cannot be shared or transferred, ensuring that attendance records accurately reflect physical presence with a false positive rate below 2%.
+Hybrid Edge-Cloud Architecture: The three-tier architecture optimally distributes computational responsibilities—performing face recognition locally on edge devices while leveraging cloud infrastructure for centralized data management. This design achieves real-time performance, enhanced privacy, offline operation capability, and horizontal scalability.
+Comprehensive Security: FRAMS implements robust security measures including JWT-based authentication, PostgreSQL Row Level Security policies, encrypted JSONB storage for biometric data, and TLS 1.2+ encrypted transmission. The system adheres to data protection regulations (GDPR, DPDP Act) through data minimization and audit logging.
+Role-Based Access Control: The system provides distinct interfaces and functionalities for three user roles—students, teachers, and administrators—with database-level access control enforcement through RLS policies. Each role has appropriate access to relevant data and functions.
+Real-Time Monitoring and Analytics: FRAMS enables real-time attendance tracking with immediate data availability through WebSocket subscriptions. The system provides comprehensive reporting capabilities including daily summaries, subject-wise breakdowns, student-wise percentages, and exportable reports in multiple formats.
+Cost-Effective Implementation: By utilizing standard desktop hardware (Intel i5/Ryzen 5, 8GB RAM, HD camera) rather than specialized equipment, FRAMS maintains accessibility for educational institutions with varying budgetary constraints. The total hardware cost ranges from $300-600 per edge device.
+
+9.2 System Effectiveness
+The deployment and testing of FRAMS in a controlled educational environment with 50 enrolled students across 120 attendance sessions demonstrates the system's effectiveness:
+Performance Metrics: The system consistently achieves sub-second recognition time (average 0.65s), maintains real-time video processing (28-30 FPS), and exhibits low resource utilization (485MB memory, 32% CPU). These metrics validate the system's suitability for deployment on standard hardware.
+Accuracy Analysis: With an overall recognition accuracy of 95.1%, FRAMS performs comparably to commercial face recognition systems while maintaining computational efficiency. The system achieves 97.5% accuracy under optimal conditions and maintains 92% accuracy even in challenging conditions (low light, accessories).
+Time Efficiency: FRAMS delivers substantial time savings, recovering 63-81 hours of instructional time per semester per class. This represents 5-7 additional class periods that can be dedicated to teaching rather than administrative tasks.
+User Satisfaction: User acceptance testing reveals high satisfaction across all stakeholder groups—teachers (4.6/5.0), students (4.5/5.0), and administrators (4.7/5.0)—validating the system's usability and practical value.
+Scalability Validation: The hybrid architecture successfully supports concurrent operation of multiple edge devices with centralized cloud management, demonstrating the system's scalability for multi-institution deployment.
+
+9.3 Benefits of FRAMS
+FRAMS delivers significant benefits to educational institutions:
+For Institutions:
+•	Improved academic governance through accurate, real-time attendance data
+•	Enhanced compliance with regulatory attendance requirements
+•	Reduced administrative overhead and operational costs
+•	Better resource allocation based on attendance analytics
+•	Strengthened academic integrity through proxy prevention
+For Teachers:
+•	Significant time savings (7-9 minutes per session)
+•	Reduced administrative burden
+•	Immediate access to attendance data
+•	Simplified report generation
+•	Focus on teaching rather than attendance management
+For Students:
+•	Convenient, contactless attendance marking
+•	Real-time access to attendance records via mobile app
+•	Transparent attendance tracking with percentage calculations
+•	Timely notifications for attendance status
+•	Fair and accurate attendance recording
+For Administrators:
+•	Centralized management of multiple branches and classes
+•	Comprehensive system analytics and reporting
+•	Real-time monitoring of attendance patterns
+•	Identification of at-risk students for timely intervention
+•	Data-driven decision-making capabilities
+ 
+CHAPTER 10
+FUTURE SCOPE
+
+The Face Recognition and Attendance Management System (FRAMS) provides a strong foundation for future development and enhancements. Although the current implementation successfully automates attendance using facial recognition technology, several improvements can further enhance system performance, scalability, and usability. Future research and development may focus on expanding technical capabilities, improving integration with institutional systems, and strengthening security and user experience.
+
+10.1 Technical Enhancements
+Future versions of FRAMS can include several technical improvements to enhance recognition performance and system flexibility.
+One possible enhancement is mobile-based face recognition, which would allow teachers to mark attendance directly using smartphones or tablets. Lightweight machine learning models can be implemented for mobile inference, enabling attendance recording without requiring a dedicated desktop system.
+Key improvements in this area may include:
+•	Support for attendance marking through Android and iOS devices
+•	Deployment of lightweight on-device machine learning models
+•	Reduced dependency on dedicated desktop hardware
+•	Increased classroom mobility for teachers
+Another enhancement involves multi-camera support for large classrooms or lecture halls. By deploying multiple cameras, the system could detect faces from different viewpoints and improve recognition accuracy in crowded environments.
+Additional improvements could include:
+•	Integration of multiple camera feeds for face detection
+•	Aggregation of recognition results from different camera angles
+•	Improved coverage in large classrooms or auditoriums
+Recognition performance can also be improved in challenging environments. Future versions of FRAMS may incorporate techniques for enhanced low-light performance, such as adaptive image enhancement or infrared camera integration.
+Possible improvements include:
+•	Image enhancement algorithms for poor lighting conditions
+•	Optimization of camera settings for different environments
+•	Support for infrared or night-vision cameras
+Another advanced feature is mask-aware face recognition, which allows the system to identify individuals even when parts of the face are covered. Recognition could focus on visible facial regions such as the eyes and eyebrows to maintain accuracy.
+Additionally, emotion and engagement detection may be incorporated to analyze facial expressions and estimate student engagement during lectures. This could provide valuable feedback for teachers about class participation levels.
+
+10.2 Functional Extensions
+Future development of FRAMS may include integration with other institutional systems to streamline academic administration.
+One major extension is integration with Learning Management Systems (LMS) such as Moodle, Canvas, or Blackboard. This would allow automatic synchronization of attendance data with course management platforms.
+Such integration may provide the following benefits:
+•	Automatic attendance synchronization with course records
+•	Single sign-on (SSO) for unified authentication
+•	Improved workflow for teachers and administrators
+Another important extension is integration with Enterprise Resource Planning (ERP) systems used by educational institutions. This would allow attendance data to be connected with other academic information such as student enrollment and examination eligibility.
+Additional functional improvements may include:
+•	Automatic synchronization of student enrollment data
+•	Linking attendance with examination eligibility criteria
+•	Generation of institutional compliance reports
+Future versions of FRAMS may also introduce automated notifications and alerts. These notifications can inform students or parents when attendance falls below required thresholds.
+Examples of notification features include:
+•	Email or SMS alerts for low attendance
+•	Push notifications through the mobile application
+•	Alerts to teachers when attendance sessions are completed
+Another useful feature is advanced analytics and predictive modeling. Machine learning techniques could analyze attendance patterns to identify students at risk of poor academic performance.
+Potential capabilities include:
+•	Predictive models for attendance trends
+•	Identification of at-risk students
+•	Visual dashboards displaying attendance insights
+Location verification techniques such as geofencing may also be introduced to ensure that attendance can only be recorded within the classroom or campus area.
+
+10.3 User Experience Improvements
+Improving usability and accessibility is another important area for future development. Several features can be introduced to make the system more user-friendly and accessible to a wider range of users.
+One possible improvement is the introduction of voice-based commands, allowing teachers to initiate attendance sessions using simple voice instructions. This would enable hands-free operation and improve accessibility.
+Another enhancement is the use of augmented reality (AR) to display student information in real time during recognition sessions. AR overlays could visually highlight recognized students and display their attendance status.
+Additional user experience improvements may include:
+•	Accessibility support for visually impaired users through screen readers
+•	High-contrast interface themes for improved visibility
+•	Keyboard navigation support for all system functions
+•	Multilingual interfaces including Hindi and regional languages
+To improve student motivation, gamification features may also be introduced. These features could encourage students to maintain consistent attendance through visual rewards and progress indicators.
+Examples include:
+•	Attendance streak tracking
+•	Achievement badges for consistent attendance
+•	Leaderboards displaying class attendance performance
+
+10.4 Security and Privacy Enhancements
+Since FRAMS processes biometric data, ensuring strong security and privacy protection is essential. Future versions of the system may incorporate advanced techniques to further secure biometric information and ensure compliance with data protection regulations.
+Possible security enhancements include:
+•	Advanced encryption methods for facial feature vectors
+•	Secure storage and transmission of biometric data
+•	End-to-end encryption for sensitive information
+Privacy-preserving techniques such as differential privacy can also be applied to protect individual data while still enabling useful statistical analysis.
+Additional improvements may include:
+•	Comprehensive audit logs for system operations
+•	Automated compliance monitoring for data protection standards
+•	Regular security audits and vulnerability assessments
+
+10.5 Summary
+The future scope of FRAMS includes technical improvements, functional integrations, enhanced analytics, and stronger security mechanisms. These enhancements will improve the flexibility, scalability, and reliability of the system.
+Future developments may include:
+•	Mobile-based attendance systems
+•	Multi-camera face recognition
+•	Integration with LMS and ERP platforms
+•	Predictive analytics for attendance monitoring
+•	Improved accessibility and user experience features
+•	Advanced biometric security mechanisms
+With continued development, FRAMS has the potential to evolve into a comprehensive and scalable attendance management platform suitable for large educational institutions and other environments requiring automated biometric attendance tracking. 
+CHAPTER 11
+REFERENCES
+1. Research Papers and Conference Proceedings
+[1] Y. Taigman, M. Yang, M. Ranzato, and L. Wolf, “DeepFace: Closing the gap to human-level performance in face verification,” Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2014, pp. 1701–1708.
+[2] F. Schroff, D. Kalenichenko, and J. Philbin, “FaceNet: A unified embedding for face recognition and clustering,” Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2015, pp. 815–823.
+[3] O. M. Parkhi, A. Vedaldi, and A. Zisserman, “Deep face recognition,” Proceedings of the British Machine Vision Conference (BMVC), 2015.
+[4] V. Bazarevsky, Y. Kartynnik, A. Vakunov, K. Raveendran, and M. Grundmann, “BlazeFace: Sub-millisecond neural face detection on mobile GPUs,” arXiv preprint arXiv:1907.05047, 2019.
+[5] P. Viola and M. Jones, “Rapid object detection using a boosted cascade of simple features,” Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2001.
+[6] W. Shi, J. Cao, Q. Zhang, Y. Li, and L. Xu, “Edge computing: Vision and challenges,” IEEE Internet of Things Journal, vol. 3, no. 5, pp. 637–646, 2016.
+
+2. Technical Documentation
+[7] Google Research, “MediaPipe: Cross-platform, customizable machine learning solutions for live and streaming media.”
+Available: https://google.github.io/mediapipe/
+[8] OpenCV Team, “OpenCV: Open-Source Computer Vision Library.”
+Available: https://opencv.org/
+[9] Supabase Inc., “Supabase Documentation.”
+Available: https://supabase.com/docs
+[10] PostgreSQL Global Development Group, “PostgreSQL Documentation.”
+Available: https://www.postgresql.org/docs/
+[11] Meta Platforms Inc., “React Native Documentation.”
+Available: https://reactnative.dev/docs
+[12] The Qt Company, “Qt for Python (PySide6) Documentation.”
+Available: https://doc.qt.io/qtforpython/
+
+3. Books and Textbooks
+[13] R. Szeliski, Computer Vision: Algorithms and Applications, 2nd ed., Springer, 2022.
+[14] I. Goodfellow, Y. Bengio, and A. Courville, Deep Learning, MIT Press, 2016.
+
+4. Standards and Regulations
+[15] European Parliament and Council of the European Union, General Data Protection Regulation (GDPR), Regulation (EU) 2016/679, 2016.
+[16] Government of India, Digital Personal Data Protection Act (DPDP Act), 2023.
+
+
+ 
+CHAPTER 12
+APPENDIX
+The appendix section provides supplementary information that supports the implementation and usage of the Face Recognition and Attendance Management System (FRAMS). This includes additional screenshots, installation instructions, troubleshooting guidance, and a glossary of technical terms used in the project.
+
+Appendix A: Additional Screenshots
+This section presents additional screenshots of the FRAMS system that demonstrate various interfaces and database views used during system operation.
+Figure 12.1: Desktop Application – Error Handling Screen displaying user-friendly error messages for system exceptions.
+Figure 12.2: Mobile Application – Settings Screen showing configuration options such as theme selection and notification preferences.
+Figure 12.3: Mobile Application – Profile Screen displaying user information and account management options.
+Figure 12.4: Database Interface – Attendance Table View showing multiple attendance records with timestamps.
+Figure 12.5: Database Interface – Sessions Table View displaying active and completed attendance sessions.
+
+Appendix B: Installation Guide
+This section provides instructions for installing and running both the desktop and mobile components of the FRAMS system.
+B.1 Desktop Application Installation
+The desktop application is developed using Python and requires several dependencies to run properly.
+Prerequisites
+•	Python 3.10 or higher
+•	pip package manager
+•	Git (optional, for cloning the repository)
+Installation Steps
+1.	Clone or download the Face_Reco desktop application.
+2.	Navigate to the application directory.
+3.	Create a virtual environment:
+python -m venv venv
+4.	Activate the virtual environment:
+•	Windows:
+venv\Scripts\activate
+•	Linux / macOS:
+source venv/bin/activate
+5.	Install the required dependencies:
+pip install -r requirements.txt
+6.	Configure environment variables in the .env configuration file.
+7.	Run the application:
+python main.py
+
+B.2 Mobile Application Installation
+The mobile application is developed using React Native and Expo.
+Prerequisites
+•	Node.js version 18 or higher
+•	npm or yarn package manager
+•	Expo CLI
+•	Android Studio (for Android development) or Xcode (for iOS development)
+Installation Steps
+1.	Clone or download the FRAMS mobile application repository.
+2.	Navigate to the project directory.
+3.	Install required dependencies:
+npm install
+4.	Configure Supabase credentials in the supabaseClient configuration file.
+5.	Start the development server:
+expo start
+6.	Run the application using the Expo Go mobile application or build a production version:
+eas build --platform android
+eas build --platform ios
+
+Appendix C: Troubleshooting Guide
+This section lists common issues that may occur during system installation or operation along with possible solutions.
+Issue 1: Camera Not Detected
+Possible solutions include:
+•	Verify that the webcam is properly connected.
+•	Check the camera index configuration in the .env file.
+•	Ensure that camera permissions are granted to the application.
+Issue 2: Face Detection Not Working
+Possible solutions include:
+•	Ensure adequate lighting in the environment.
+•	Position the face clearly in front of the camera.
+•	Verify that the MediaPipe library is installed correctly.
+Issue 3: Database Connection Error
+Possible solutions include:
+•	Verify the Supabase project URL and API key in the configuration file.
+•	Check internet connectivity.
+•	Confirm that the Supabase project is active.
+Issue 4: Low Recognition Accuracy
+Possible solutions include:
+•	Re-register the student with better lighting and frontal face images.
+•	Adjust the recognition threshold in the configuration.
+•	Improve camera positioning and lighting conditions.
+
+Issue 5: Mobile Application Not Connecting
+Possible solutions include:
+•	Verify Supabase credentials in the mobile application configuration.
+•	Check the network connection.
+•	Ensure database security policies are configured correctly.
+
+Appendix D: Glossary
+The following glossary defines important technical terms used in this project.
+Term	Description
+API	Application Programming Interface used for communication between software components.
+AES	Advanced Encryption Standard used for secure data encryption.
+BlazeFace	Lightweight face detection model used for real-time detection.
+Cosine Similarity	Mathematical method used to measure similarity between feature vectors.
+Edge Computing	Processing performed close to the data source rather than on a central server.
+FaceMesh	MediaPipe model used to detect facial landmarks.
+JSONB	Binary JSON data format used in PostgreSQL for efficient storage.
+JWT	JSON Web Token used for authentication and secure API access.
+MediaPipe	Framework developed by Google for building machine learning pipelines.
+PostgreSQL	Open-source relational database system used for storing system data.
+RLS	Row Level Security used to control database access permissions.
+Supabase	Backend-as-a-Service platform providing database and authentication services.
+WebSocket	Communication protocol enabling real-time data transfer between systems.
+

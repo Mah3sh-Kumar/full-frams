@@ -24,6 +24,7 @@ export type RootStackParamList = {
     AttendanceManager: undefined;
     AssignmentManager: undefined;
     MarksReviewManager: undefined;
+    AssignedSubjects: undefined;
 
     // Admin
     UserManagement: undefined;
@@ -31,6 +32,8 @@ export type RootStackParamList = {
     AuditLogs: undefined;
     VerificationDashboard: undefined;
     Reports: undefined;
+    AssignSubjects: undefined;
+    DebugUsers: undefined;
 };
 
 // ============================================================================

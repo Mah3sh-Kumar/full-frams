@@ -56,7 +56,9 @@ export const useProfile = (userId: string | undefined, role: string | null) => {
                 profileData.branch = data.students.branch || '';
                 profileData.className = data.students.classes?.name || '';
             } else if (role === 'teacher' && data.teachers) {
-                profileData.department = data.teachers.department || '';
+                const dept = data.teachers.department || '';
+                // Only set department if it's not "Not assigned"
+                profileData.department = (dept && dept !== 'Not assigned') ? dept : '';
             }
 
             setProfile(profileData);

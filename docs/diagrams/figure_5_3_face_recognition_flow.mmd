@@ -1,0 +1,119 @@
+%% Figure 5.3: Face Recognition Flow
+%% Shows the real-time face recognition process during attendance sessions
+
+graph TB
+    Start([Session Active])
+    style Start fill:#4CAF50,stroke:#2E7D32,stroke-width:2px
+    
+    End([Continue Recognition])
+    style End fill:#2196F3,stroke:#1565C0,stroke-width:2px
+    
+    Stop([Session Stopped])
+    style Stop fill:#F44336,stroke:#C62828,stroke-width:2px
+    
+    %% Initialization Phase
+    A1["Load Registered<br/>Students from Database"]
+    style A1 fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    
+    A2["Initialize<br/>Recognition Engine"]
+    style A2 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    %% Capture Phase
+    A3["Capture Video Frame<br/>from Camera"]
+    style A3 fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    
+    A4["Detect Faces<br/>in Frame"]
+    style A4 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    D1{Face<br/>Detected?}
+    style D1 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    A5["Display:<br/>Scanning..."]
+    style A5 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    %% Recognition Phase
+    A6["Extract Face<br/>Region"]
+    style A6 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    A7["Extract Facial<br/>Features"]
+    style A7 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    A8["Generate Face<br/>Encoding"]
+    style A8 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    A9["Compare with<br/>Registered Students<br/>(Similarity Matching)"]
+    style A9 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    D2{Match<br/>Found?<br/>(Threshold Met)}
+    style D2 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    E1["Display:<br/>Unknown Person"]
+    style E1 fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+    
+    %% Duplicate Check Phase
+    A10["Check if Student<br/>Already Marked Present"]
+    style A10 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    D3{Already<br/>Marked?}
+    style D3 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    E2["Display:<br/>Already Present"]
+    style E2 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    %% Attendance Recording Phase
+    A11["Mark Attendance<br/>in Database"]
+    style A11 fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    
+    A12["Record Timestamp<br/>& Confidence Score"]
+    style A12 fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    
+    A13["Display:<br/>Student Name<br/>✓ Marked Present"]
+    style A13 fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    
+    A14["Send Real-time<br/>Notification<br/>to Mobile App"]
+    style A14 fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px
+    
+    A15["Update Local<br/>Attendance List"]
+    style A15 fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    
+    %% Session Control
+    D4{Teacher<br/>Stops<br/>Session?}
+    style D4 fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    
+    %% Flow
+    Start --> A1
+    A1 --> A2
+    A2 --> A3
+    
+    A3 --> A4
+    A4 --> D1
+    
+    D1 -->|No| A5
+    A5 --> D4
+    
+    D1 -->|Yes| A6
+    A6 --> A7
+    A7 --> A8
+    A8 --> A9
+    A9 --> D2
+    
+    D2 -->|No| E1
+    E1 --> D4
+    
+    D2 -->|Yes| A10
+    A10 --> D3
+    
+    D3 -->|Yes| E2
+    E2 --> D4
+    
+    D3 -->|No| A11
+    A11 --> A12
+    A12 --> A13
+    A13 --> A14
+    A14 --> A15
+    A15 --> D4
+    
+    D4 -->|No| End
+    End --> A3
+    
+    D4 -->|Yes| Stop

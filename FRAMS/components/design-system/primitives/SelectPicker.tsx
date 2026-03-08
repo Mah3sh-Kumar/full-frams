@@ -1,12 +1,12 @@
 /**
  * SelectPicker Component
  * 
- * An enhanced picker component specifically designed for class levels and departments
- * with improved visual design, icons, and better user experience.
+ * An enhanced picker component with improved visual design, smooth animations,
+ * better accessibility, and polished user experience.
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, FlatList, Dimensions, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
@@ -50,6 +50,10 @@ function SelectPicker<T = string>({
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  
+  // Animation values
+  const [scaleAnim] = useState(new Animated.Value(0));
+  const [fadeAnim] = useState(new Animated.Value(0));
 
   // Find the selected item to display its label
   const selectedItem = useMemo(() => {
@@ -81,20 +85,47 @@ function SelectPicker<T = string>({
 
   const handleSelect = (itemValue: T) => {
     onValueChange(itemValue);
-    setModalVisible(false);
-    setSearchQuery('');
+    handleClose();
   };
 
   const handleOpen = () => {
     if (!disabled) {
       setModalVisible(true);
+      // Animate modal entrance
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   };
 
   const handleClose = () => {
-    setModalVisible(false);
-    setSearchQuery('');
-    setSearchFocused(false);
+    // Animate modal exit
+    Animated.parallel([
+      Animated.timing(scaleAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setModalVisible(false);
+      setSearchQuery('');
+      setSearchFocused(false);
+    });
   };
 
   // Get icon for variant
@@ -140,7 +171,7 @@ function SelectPicker<T = string>({
     label: {
       fontSize: 14,
       fontWeight: '600',
-      marginBottom: 4,
+      marginBottom: 6,
       color: error ? tokens.colors.error.main : getTextColor(),
     },
     pickerButton: {
@@ -148,26 +179,20 @@ function SelectPicker<T = string>({
       alignItems: 'center',
       justifyContent: 'space-between',
       backgroundColor: disabled ? getInputDisabledColor() : getInputColor(),
-      borderRadius: 14,
-      borderWidth: 1.5,
+      borderRadius: 12,
+      borderWidth: 1,
       borderColor: error ? tokens.colors.error.main : getBorderColor(),
       paddingHorizontal: 16,
       paddingVertical: 14,
       minHeight: 52,
-      shadowColor: tokens.colors.primary.main,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0,
-      shadowRadius: 8,
-      elevation: 0,
     },
     pickerButtonFocused: {
       borderColor: tokens.colors.primary.main,
-      borderWidth: 2,
-      shadowOpacity: 0.15,
-      elevation: 3,
+      borderWidth: 1.5,
+      backgroundColor: getSurfaceColor(),
     },
     pickerButtonDisabled: {
-      opacity: 0.6,
+      opacity: 0.5,
     },
     pickerContent: {
       flexDirection: 'row',
@@ -191,60 +216,70 @@ function SelectPicker<T = string>({
       marginLeft: 8,
     },
     errorText: {
-      fontSize: 14,
+      fontSize: 13,
       color: tokens.colors.error.main,
       marginTop: 4,
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     modalContent: {
       width: '90%',
-      maxWidth: 400,
+      maxWidth: 420,
       maxHeight: Math.min(Dimensions.get('window').height * 0.75, Dimensions.get('window').height - 100),
       backgroundColor: getSurfaceColor(),
       borderRadius: 16,
       padding: 16,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 12,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      elevation: 8,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+        },
+        android: {
+          elevation: 8,
+        },
+      }),
     },
     modalHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: 12,
       paddingBottom: 12,
       borderBottomWidth: 1,
-      borderBottomColor: getBorderColor(),
+      borderBottomColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
     },
     modalTitle: {
-      fontSize: 20,
-      fontWeight: '700',
+      fontSize: 18,
+      fontWeight: '600',
       color: getTextColor(),
     },
     closeButton: {
-      padding: 8,
-      borderRadius: 20,
-      backgroundColor: mode === 'dark' ? tokens.colors.neutral.gray800 : tokens.colors.neutral.gray100,
+      padding: 6,
+      borderRadius: 16,
+      backgroundColor: 'transparent',
     },
     searchContainer: {
       marginBottom: 12,
     },
     searchInput: {
-      backgroundColor: mode === 'dark' ? tokens.colors.neutral.gray900 : tokens.colors.neutral.gray50,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
+      backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 15,
       color: getTextColor(),
       borderWidth: 1,
-      borderColor: getBorderColor(),
+      borderColor: 'transparent',
+      textAlign: 'left',
+      writingDirection: 'ltr',
     },
     searchInputFocused: {
       borderColor: tokens.colors.primary.main,
@@ -252,40 +287,25 @@ function SelectPicker<T = string>({
     },
     listContainer: {
       maxHeight: Math.min(Dimensions.get('window').height * 0.5, 400),
-      paddingBottom: 16,
     },
     listItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 14,
-      paddingVertical: 14,
-      borderRadius: 12,
-      marginBottom: 6,
-      backgroundColor: mode === 'dark' ? tokens.colors.neutral.gray900 : tokens.colors.neutral.gray50,
-      borderWidth: 1.5,
-      borderColor: getBorderColor(),
-      minHeight: 64,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)',
+      minHeight: 52,
     },
     listItemSelected: {
-      backgroundColor: tokens.colors.primary.main,
-      borderColor: tokens.colors.primary.main,
-      shadowColor: tokens.colors.primary.main,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 5,
+      backgroundColor: mode === 'dark' ? 'rgba(99, 102, 241, 0.12)' : 'rgba(99, 102, 241, 0.08)',
+      borderBottomColor: 'transparent',
     },
     listItemDisabled: {
       opacity: 0.4,
     },
     listItemIcon: {
       marginRight: 12,
-      width: 24,
-      height: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 8,
-      backgroundColor: mode === 'dark' ? tokens.colors.neutral.gray800 : tokens.colors.neutral.gray100,
     },
     listItemContent: {
       flex: 1,
@@ -294,58 +314,50 @@ function SelectPicker<T = string>({
     listItemText: {
       fontSize: 16,
       color: getTextColor(),
-      fontWeight: '600',
-      marginBottom: 3,
-      letterSpacing: 0.3,
+      fontWeight: '500',
+      marginBottom: 2,
     },
     listItemTextSelected: {
-      fontWeight: '700',
-      color: '#FFFFFF',
+      fontWeight: '600',
+      color: tokens.colors.primary.main,
       fontSize: 16,
-      letterSpacing: 0.3,
     },
     listItemDescription: {
       fontSize: 13,
       color: getTextSecondaryColor(),
-      opacity: 0.75,
-      lineHeight: 18,
+      opacity: 0.7,
+      lineHeight: 17,
       fontWeight: '400',
     },
     listItemDescriptionSelected: {
       fontSize: 13,
-      color: '#FFFFFF',
-      opacity: 0.95,
+      color: getTextSecondaryColor(),
+      opacity: 0.8,
       fontWeight: '400',
-      lineHeight: 18,
+      lineHeight: 17,
     },
     checkIcon: {
-      marginLeft: 10,
-      width: 28,
-      height: 28,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 14,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      marginLeft: 8,
     },
     emptyState: {
-      padding: 40,
+      padding: 32,
       alignItems: 'center',
     },
     emptyStateIcon: {
       marginBottom: 12,
     },
     emptyStateText: {
-      fontSize: 16,
+      fontSize: 15,
       color: getTextSecondaryColor(),
       textAlign: 'center',
       fontWeight: '500',
     },
     emptyStateSubtext: {
-      fontSize: 14,
+      fontSize: 13,
       color: getTextSecondaryColor(),
       textAlign: 'center',
       marginTop: 4,
-      opacity: 0.8,
+      opacity: 0.7,
     },
   });
 
@@ -402,20 +414,43 @@ function SelectPicker<T = string>({
       <Modal
         visible={modalVisible}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={handleClose}
         testID={testID ? `${testID}-modal` : undefined}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={handleClose}
+        <Animated.View
+          style={[
+            styles.modalOverlay,
+            {
+              opacity: fadeAnim,
+            },
+          ]}
         >
           <TouchableOpacity
+            style={{ flex: 1 }}
             activeOpacity={1}
-            onPress={(e) => e?.stopPropagation?.()}
+            onPress={handleClose}
           >
-            <View style={styles.modalContent}>
+            <Animated.View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                transform: [
+                  {
+                    scale: scaleAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={(e) => e?.stopPropagation?.()}
+              >
+                <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Select {label}</Text>
                 <TouchableOpacity
@@ -425,7 +460,7 @@ function SelectPicker<T = string>({
                   accessibilityRole="button"
                   accessibilityLabel="Close picker"
                 >
-                  <Ionicons name="close" size={18} color={getTextSecondaryColor()} />
+                  <Ionicons name="close" size={20} color={getTextSecondaryColor()} />
                 </TouchableOpacity>
               </View>
 
@@ -459,7 +494,6 @@ function SelectPicker<T = string>({
                     data={filteredItems}
                     keyExtractor={(item, index) => `${item.value}-${index}`}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 8 }}
                     renderItem={({ item }) => {
                     const isSelected = item.value === value;
                     return (
@@ -481,7 +515,7 @@ function SelectPicker<T = string>({
                           <Ionicons
                             name={getItemIcon(item)}
                             size={18}
-                            color={isSelected ? '#FFFFFF' : getTextSecondaryColor()}
+                            color={isSelected ? tokens.colors.primary.main : getTextSecondaryColor()}
                           />
                         </View>
                         <View style={styles.listItemContent}>
@@ -511,9 +545,9 @@ function SelectPicker<T = string>({
                         {isSelected && (
                           <View style={styles.checkIcon}>
                             <Ionicons
-                              name="checkmark-circle"
+                              name="checkmark"
                               size={20}
-                              color="#FFFFFF"
+                              color={tokens.colors.primary.main}
                             />
                           </View>
                         )}
@@ -543,7 +577,9 @@ function SelectPicker<T = string>({
               </View>
             </View>
           </TouchableOpacity>
-        </TouchableOpacity>
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
       </Modal>
     </View>
   );

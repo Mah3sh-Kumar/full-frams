@@ -106,7 +106,7 @@ FRAMS/node_modules/
 FRAMS/.expo/
 
 # Documentation folder
-docs/
+#docs/
 
 # Keep these documentation files
 !README.md

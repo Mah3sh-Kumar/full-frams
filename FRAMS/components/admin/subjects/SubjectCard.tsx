@@ -24,6 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../lib/design-system/ThemeContext';
 import { fontWeights } from '../../../lib/design-system/tokens';
 import { SubjectItem, TeacherInfo } from '../../../lib/types';
+import { ActionButtonsGroup } from '../../common/ActionButtons';
 
 /**
  * SubjectCard component props
@@ -292,44 +293,14 @@ export default function SubjectCard({
 
         {/* Action buttons (conditional) */}
         {showActions && (
-          <View style={[styles.actions, { gap: tokens.spacing.md }]}>
-            <TouchableOpacity
-              onPress={() => onEdit(subject)}
-              style={[
-                styles.actionButton, 
-                { 
-                  backgroundColor: getInputColor(),
-                  width: 40,
-                  height: 40,
-                  borderRadius: tokens.borders.full,
-                }
-              ]}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${subject.name}`}
-              accessibilityHint="Opens edit form for this subject"
-            >
-              <Ionicons name="pencil" size={20} color={tokens.colors.primary.main} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onDelete(subject)}
-              style={[
-                styles.actionButton, 
-                { 
-                  backgroundColor: getInputColor(),
-                  width: 40,
-                  height: 40,
-                  borderRadius: tokens.borders.full,
-                }
-              ]}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Delete ${subject.name}`}
-              accessibilityHint="Opens delete confirmation for this subject"
-            >
-              <Ionicons name="trash" size={20} color={tokens.colors.error.main} />
-            </TouchableOpacity>
-          </View>
+          <ActionButtonsGroup
+            onEdit={() => onEdit(subject)}
+            onDelete={() => onDelete(subject)}
+            editAccessibilityLabel={`Edit ${subject.name}`}
+            editAccessibilityHint="Opens edit form for this subject"
+            deleteAccessibilityLabel={`Delete ${subject.name}`}
+            deleteAccessibilityHint="Opens delete confirmation for this subject"
+          />
         )}
       </View>
     </View>

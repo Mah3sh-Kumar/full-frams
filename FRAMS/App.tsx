@@ -46,6 +46,11 @@ import OrganizationManager from './screens/admin/OrganizationManager';
 import AuditLogsScreen from './screens/admin/AuditLogsScreen';
 import VerificationDashboard from './screens/admin/VerificationDashboard';
 import ReportsScreen from './screens/admin/ReportsScreen';
+import AssignSubjects from './screens/admin/AssignSubjects';
+import DebugUsers from './screens/admin/DebugUsers';
+
+// Teacher Screens - Additional
+import AssignedSubjects from './screens/teacher/AssignedSubjects';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -344,6 +349,23 @@ function Navigation() {
                     headerLeft: () => null,
                   }}
                 />
+                <Stack.Screen 
+                  name="AssignedSubjects" 
+                  component={AssignedSubjects}
+                  options={{
+                    title: 'Assigned Subjects',
+                    headerStyle: { 
+                      backgroundColor: tokens.colors.roles.teacher.main,
+                      elevation: 0,
+                      shadowOpacity: 0,
+                    },
+                    headerTintColor: '#FFFFFF',
+                    headerTitleStyle: {
+                      fontWeight: '600',
+                    },
+                    headerLeft: () => null,
+                  }}
+                />
               </>
             )}
 
@@ -355,6 +377,8 @@ function Navigation() {
                 <Stack.Screen name="AuditLogs" component={AuditLogsScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="VerificationDashboard" component={VerificationDashboard} options={{ title: 'User Verification' }} />
                 <Stack.Screen name="Reports" component={ReportsScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="AssignSubjects" component={AssignSubjects} options={{ headerShown: false }} />
+                <Stack.Screen name="DebugUsers" component={DebugUsers} options={{ headerShown: false }} />
               </>
             )}
           </>

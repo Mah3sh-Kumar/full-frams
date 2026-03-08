@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Alert, ScrollView, Text, TouchableOpacity, TextInput as RNTextInput } from 'react-native';
+import { View, StyleSheet, FlatList, Alert, ScrollView, Text, TouchableOpacity, TextInput as RNTextInput, Linking } from 'react-native';
 import { Menu, Portal, Modal } from 'react-native-paper';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../lib/design-system/ThemeContext';
 import { supabase } from '../../lib/supabase';
 import { fetchTeacherSubjects, fetchTeacherAssignments, fetchAssignmentSubmissions, gradeSubmission } from '../../lib/database';
+import { pickDocument, uploadAssignmentFile, deleteAssignmentFile, formatFileSize, getFileIcon } from '../../lib/fileUpload';
 import Button from '../../components/design-system/primitives/Button';
 import Card from '../../components/design-system/primitives/Card';
 import Input from '../../components/design-system/primitives/Input';
@@ -29,6 +30,12 @@ export default function AssignmentManager() {
     const [menuVisible, setMenuVisible] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
     const [createModalVisible, setCreateModalVisible] = useState(false);
+    
+    // File upload state
+    const [selectedFile, setSelectedFile] = useState<any>(null);
+    const [uploadingFile, setUploadingFile] = useState(false);
+    const [editingFile, setEditingFile] = useState<any>(null);
+    const [replaceFileConfirmVisible, setReplaceFileConfirmVisible] = useState(false);
 
     // List Mode State
     const [assignments, setAssignments] = useState<any[]>([]);
@@ -89,50 +96,223 @@ export default function AssignmentManager() {
         setCreateLoading(true);
         const dueDateValue = dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
         
-        const { error } = await supabase.from('assignments').insert({
-            subject_id: selectedSubject.id,
-            title,
-            description,
-            due_date: dueDateValue,
-            max_score: parseFloat(maxScore),
-        });
+        try {
+            // Create assignment first
+            const { data: newAssignment, error: insertError } = await supabase
+                .from('assignments')
+                .insert({
+                    subject_id: selectedSubject.id,
+                    title,
+                    description,
+                    due_date: dueDateValue,
+                    max_score: parseFloat(maxScore),
+                })
+                .select()
+                .single();
 
-        if (error) Alert.alert('Error', error.message);
-        else {
-            Alert.alert('Success', 'Assignment created!');
+            if (insertError) {
+                Alert.alert('Error', insertError.message);
+                setCreateLoading(false);
+                return;
+            }
+
+            // Upload file if selected
+            if (selectedFile && newAssignment) {
+                setUploadingFile(true);
+                const { data: uploadData, error: uploadError } = await uploadAssignmentFile(
+                    selectedFile,
+                    newAssignment.id
+                );
+
+                if (uploadError) {
+                    Alert.alert('Warning', `Assignment created but file upload failed: ${uploadError}`);
+                } else if (uploadData) {
+                    // Update assignment with file info
+                    await supabase
+                        .from('assignments')
+                        .update({
+                            attachment_url: uploadData.url,
+                            attachment_name: uploadData.name,
+                            attachment_type: uploadData.type,
+                            attachment_size: uploadData.size,
+                        })
+                        .eq('id', newAssignment.id);
+                }
+                setUploadingFile(false);
+            }
+
+            Alert.alert('Success', 'Assignment created successfully!');
             setTitle('');
             setDescription('');
             setMaxScore('100');
             setDueDate('');
             setSelectedSubject(null);
+            setSelectedFile(null);
             setCreateModalVisible(false);
             loadAssignments();
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to create assignment');
         }
+        
         setCreateLoading(false);
+    }
+
+    async function handlePickFile() {
+        const { data, error } = await pickDocument();
+        if (error) {
+            Alert.alert('Error', error);
+        } else if (data) {
+            setSelectedFile(data);
+        }
+    }
+
+    function handleRemoveFile() {
+        setSelectedFile(null);
+    }
+
+    async function handleOpenFile(url: string, fileName: string) {
+        try {
+            const canOpen = await Linking.canOpenURL(url);
+            if (canOpen) {
+                await Linking.openURL(url);
+            } else {
+                Alert.alert('Error', 'Cannot open file');
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to open file');
+        }
     }
 
     async function handleUpdateAssignment() {
         if (!editingAssignment) return;
 
         setCreateLoading(true);
-        const { error } = await supabase
-            .from('assignments')
-            .update({
-                title: editingAssignment.title,
-                description: editingAssignment.description,
-                max_score: parseFloat(editingAssignment.max_score),
-                due_date: editingAssignment.due_date,
-            })
-            .eq('id', editingAssignment.id);
+        
+        try {
+            // Handle file upload/replacement if a new file is selected
+            if (editingFile) {
+                setUploadingFile(true);
+                
+                // Delete old file if exists
+                if (editingAssignment.attachment_url) {
+                    const oldPath = editingAssignment.attachment_url.split('/').slice(-2).join('/');
+                    await deleteAssignmentFile(oldPath);
+                }
+                
+                // Upload new file
+                const { data: uploadData, error: uploadError } = await uploadAssignmentFile(
+                    editingFile,
+                    editingAssignment.id
+                );
 
-        if (error) Alert.alert('Error', error.message);
-        else {
-            Alert.alert('Success', 'Assignment updated!');
-            setEditModalVisible(false);
-            setEditingAssignment(null);
-            loadAssignments();
+                if (uploadError) {
+                    Alert.alert('Warning', `Assignment updated but file upload failed: ${uploadError}`);
+                } else if (uploadData) {
+                    // Update with new file info
+                    editingAssignment.attachment_url = uploadData.url;
+                    editingAssignment.attachment_name = uploadData.name;
+                    editingAssignment.attachment_type = uploadData.type;
+                    editingAssignment.attachment_size = uploadData.size;
+                }
+                setUploadingFile(false);
+            }
+
+            // Update assignment
+            const { error } = await supabase
+                .from('assignments')
+                .update({
+                    title: editingAssignment.title,
+                    description: editingAssignment.description,
+                    max_score: parseFloat(editingAssignment.max_score),
+                    due_date: editingAssignment.due_date,
+                    attachment_url: editingAssignment.attachment_url,
+                    attachment_name: editingAssignment.attachment_name,
+                    attachment_type: editingAssignment.attachment_type,
+                    attachment_size: editingAssignment.attachment_size,
+                })
+                .eq('id', editingAssignment.id);
+
+            if (error) {
+                Alert.alert('Error', error.message);
+            } else {
+                Alert.alert('Success', 'Assignment updated successfully!');
+                setEditModalVisible(false);
+                setEditingAssignment(null);
+                setEditingFile(null);
+                loadAssignments();
+            }
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to update assignment');
         }
+        
         setCreateLoading(false);
+    }
+
+    async function handlePickEditFile() {
+        const { data, error } = await pickDocument();
+        if (error) {
+            Alert.alert('Error', error);
+        } else if (data) {
+            // If assignment already has a file, ask to replace
+            if (editingAssignment?.attachment_url) {
+                Alert.alert(
+                    'Replace File?',
+                    `This will replace the existing file "${editingAssignment.attachment_name}". Continue?`,
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                            text: 'Replace', 
+                            style: 'destructive',
+                            onPress: () => setEditingFile(data)
+                        }
+                    ]
+                );
+            } else {
+                setEditingFile(data);
+            }
+        }
+    }
+
+    function handleRemoveEditFile() {
+        setEditingFile(null);
+    }
+
+    async function handleRemoveExistingFile() {
+        if (!editingAssignment) return;
+        
+        Alert.alert(
+            'Remove File?',
+            'This will permanently remove the attached file from this assignment. Continue?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            // Delete from storage
+                            if (editingAssignment.attachment_url) {
+                                const filePath = editingAssignment.attachment_url.split('/').slice(-2).join('/');
+                                await deleteAssignmentFile(filePath);
+                            }
+                            
+                            // Update assignment to remove file info
+                            setEditingAssignment({
+                                ...editingAssignment,
+                                attachment_url: null,
+                                attachment_name: null,
+                                attachment_type: null,
+                                attachment_size: null,
+                            });
+                            
+                            Alert.alert('Success', 'File removed');
+                        } catch (error) {
+                            Alert.alert('Error', 'Failed to remove file');
+                        }
+                    }
+                }
+            ]
+        );
     }
 
     async function handleDeleteAssignment() {
@@ -255,6 +435,8 @@ export default function AssignmentManager() {
             borderWidth: 1,
             borderColor: tokens.colors.neutral.gray300,
             marginBottom: tokens.spacing.md,
+            textAlign: 'left',
+            writingDirection: 'ltr',
         },
         card: {
             marginBottom: tokens.spacing.md,
@@ -277,7 +459,20 @@ export default function AssignmentManager() {
         },
         assignmentActions: {
             flexDirection: 'row',
-            gap: tokens.spacing.xs,
+            gap: 8,
+            alignItems: 'center',
+        },
+        actionButton: {
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            justifyContent: 'center',
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.1,
+            shadowRadius: 2,
+            elevation: 2,
         },
         modal: {
             backgroundColor: getSurfaceColor(),
@@ -313,6 +508,46 @@ export default function AssignmentManager() {
         statusText: {
             fontSize: tokens.typography.caption.fontSize,
             fontWeight: tokens.typography.body.fontWeight,
+        },
+        label: {
+            fontSize: 14,
+            fontWeight: '600',
+        },
+        helperText: {
+            fontSize: 12,
+            lineHeight: 18,
+        },
+        filePreview: {
+            borderRadius: tokens.borders.radius.medium,
+            borderWidth: 1,
+            padding: tokens.spacing.md,
+        },
+        fileInfo: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        fileName: {
+            fontSize: 15,
+            fontWeight: '500',
+            marginBottom: 4,
+        },
+        fileSize: {
+            fontSize: 12,
+        },
+        attachmentBadge: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: tokens.colors.info.light,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 6,
+            marginTop: 8,
+        },
+        attachmentText: {
+            fontSize: 12,
+            color: tokens.colors.info.main,
+            marginLeft: 4,
+            fontWeight: '500',
         },
     });
 
@@ -475,23 +710,38 @@ export default function AssignmentManager() {
                                     <Text style={[styles.assignmentSubtext, { marginTop: tokens.spacing.xs }]}>
                                         Due: {new Date(item.due_date).toLocaleDateString()}
                                     </Text>
+                                    {item.attachment_url && (
+                                        <TouchableOpacity 
+                                            style={styles.attachmentBadge}
+                                            onPress={() => handleOpenFile(item.attachment_url, item.attachment_name)}
+                                        >
+                                            <Ionicons name={getFileIcon(item.attachment_type)} size={14} color={tokens.colors.info.main} />
+                                            <Text style={styles.attachmentText} numberOfLines={1}>
+                                                {item.attachment_name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
                                 <View style={styles.assignmentActions}>
                                     <TouchableOpacity 
+                                        style={[styles.actionButton, { backgroundColor: '#e0e7ff' }]}
                                         onPress={() => {
                                             setEditingAssignment(item);
                                             setEditModalVisible(true);
                                         }}
+                                        activeOpacity={0.7}
                                     >
-                                        <Ionicons name="pencil" size={20} color={tokens.colors.primary.main} />
+                                        <Ionicons name="pencil" size={18} color={tokens.colors.primary.main} />
                                     </TouchableOpacity>
                                     <TouchableOpacity 
+                                        style={[styles.actionButton, { backgroundColor: '#fee2e2' }]}
                                         onPress={() => {
                                             setAssignmentToDelete(item);
                                             setDeleteConfirmVisible(true);
                                         }}
+                                        activeOpacity={0.7}
                                     >
-                                        <Ionicons name="trash" size={20} color={tokens.colors.error.main} />
+                                        <Ionicons name="trash" size={18} color={tokens.colors.error.main} />
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -562,12 +812,56 @@ export default function AssignmentManager() {
                             onChangeText={setDueDate}
                         />
 
+                        {/* File Upload Section */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[styles.label, { color: getTextColor(), marginBottom: 8 }]}>
+                                Attachment (Optional)
+                            </Text>
+                            <Text style={[styles.helperText, { color: getTextSecondaryColor(), marginBottom: 12 }]}>
+                                Upload PDF or Word document (Max 10MB)
+                            </Text>
+                            
+                            {selectedFile ? (
+                                <View style={[styles.filePreview, { backgroundColor: tokens.colors.primary.light, borderColor: tokens.colors.primary.main }]}>
+                                    <View style={styles.fileInfo}>
+                                        <Ionicons name={getFileIcon(selectedFile.mimeType)} size={24} color={tokens.colors.primary.main} />
+                                        <View style={{ flex: 1, marginLeft: 12 }}>
+                                            <Text style={[styles.fileName, { color: getTextColor() }]} numberOfLines={1}>
+                                                {selectedFile.name}
+                                            </Text>
+                                            <Text style={[styles.fileSize, { color: getTextSecondaryColor() }]}>
+                                                {formatFileSize(selectedFile.size || 0)}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity onPress={handleRemoveFile}>
+                                            <Ionicons name="close-circle" size={24} color={tokens.colors.error.main} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            ) : (
+                                <Button 
+                                    variant="secondary" 
+                                    onPress={handlePickFile}
+                                    icon={<Ionicons name="attach" size={20} color={tokens.colors.primary.main} />}
+                                >
+                                    Choose File
+                                </Button>
+                            )}
+                        </View>
+
                         <View style={styles.modalActions}>
-                            <Button variant="ghost" onPress={() => setCreateModalVisible(false)}>
+                            <Button variant="ghost" onPress={() => {
+                                setCreateModalVisible(false);
+                                setSelectedFile(null);
+                            }}>
                                 Cancel
                             </Button>
-                            <Button variant="primary" onPress={handleCreateAssignment} loading={createLoading}>
-                                Create
+                            <Button 
+                                variant="primary" 
+                                onPress={handleCreateAssignment} 
+                                loading={createLoading || uploadingFile}
+                            >
+                                {uploadingFile ? 'Uploading...' : 'Create'}
                             </Button>
                         </View>
                     </ScrollView>
@@ -576,7 +870,10 @@ export default function AssignmentManager() {
                 {/* Edit Assignment Modal */}
                 <Modal 
                     visible={editModalVisible} 
-                    onDismiss={() => setEditModalVisible(false)} 
+                    onDismiss={() => {
+                        setEditModalVisible(false);
+                        setEditingFile(null);
+                    }} 
                     contentContainerStyle={styles.modal}
                 >
                     <ScrollView keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
@@ -598,12 +895,83 @@ export default function AssignmentManager() {
                             onChangeText={(text) => setEditingAssignment({ ...editingAssignment, max_score: text })}
                         />
 
+                        {/* File Upload/Management Section */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[styles.label, { color: getTextColor(), marginBottom: 8 }]}>
+                                Attachment
+                            </Text>
+                            
+                            {/* Show existing file */}
+                            {editingAssignment?.attachment_url && !editingFile && (
+                                <View style={[styles.filePreview, { backgroundColor: tokens.colors.info.light, borderColor: tokens.colors.info.main }]}>
+                                    <View style={styles.fileInfo}>
+                                        <Ionicons name={getFileIcon(editingAssignment.attachment_type)} size={24} color={tokens.colors.info.main} />
+                                        <View style={{ flex: 1, marginLeft: 12 }}>
+                                            <Text style={[styles.fileName, { color: getTextColor() }]} numberOfLines={1}>
+                                                {editingAssignment.attachment_name}
+                                            </Text>
+                                            <Text style={[styles.fileSize, { color: getTextSecondaryColor() }]}>
+                                                {formatFileSize(editingAssignment.attachment_size || 0)}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity 
+                                            onPress={() => handleOpenFile(editingAssignment.attachment_url, editingAssignment.attachment_name)}
+                                            style={{ marginRight: 12 }}
+                                        >
+                                            <Ionicons name="eye" size={24} color={tokens.colors.info.main} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={handleRemoveExistingFile}>
+                                            <Ionicons name="trash" size={24} color={tokens.colors.error.main} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            )}
+                            
+                            {/* Show new file to upload */}
+                            {editingFile && (
+                                <View style={[styles.filePreview, { backgroundColor: tokens.colors.success.light, borderColor: tokens.colors.success.main }]}>
+                                    <View style={styles.fileInfo}>
+                                        <Ionicons name={getFileIcon(editingFile.mimeType)} size={24} color={tokens.colors.success.main} />
+                                        <View style={{ flex: 1, marginLeft: 12 }}>
+                                            <Text style={[styles.fileName, { color: getTextColor() }]} numberOfLines={1}>
+                                                {editingFile.name}
+                                            </Text>
+                                            <Text style={[styles.fileSize, { color: getTextSecondaryColor() }]}>
+                                                {formatFileSize(editingFile.size || 0)} • New file
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity onPress={handleRemoveEditFile}>
+                                            <Ionicons name="close-circle" size={24} color={tokens.colors.error.main} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            )}
+                            
+                            {/* Upload button */}
+                            {!editingFile && (
+                                <Button 
+                                    variant="secondary" 
+                                    onPress={handlePickEditFile}
+                                    icon={<Ionicons name="attach" size={20} color={tokens.colors.primary.main} />}
+                                >
+                                    {editingAssignment?.attachment_url ? 'Replace File' : 'Add File'}
+                                </Button>
+                            )}
+                        </View>
+
                         <View style={styles.modalActions}>
-                            <Button variant="ghost" onPress={() => setEditModalVisible(false)}>
+                            <Button variant="ghost" onPress={() => {
+                                setEditModalVisible(false);
+                                setEditingFile(null);
+                            }}>
                                 Cancel
                             </Button>
-                            <Button variant="primary" onPress={handleUpdateAssignment} loading={createLoading}>
-                                Update
+                            <Button 
+                                variant="primary" 
+                                onPress={handleUpdateAssignment} 
+                                loading={createLoading || uploadingFile}
+                            >
+                                {uploadingFile ? 'Uploading...' : 'Update'}
                             </Button>
                         </View>
                     </ScrollView>

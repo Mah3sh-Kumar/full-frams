@@ -199,6 +199,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 0,
     height: '100%',
+    textAlign: 'left',
+    writingDirection: 'ltr',
   },
   error: {
     fontSize: 14,

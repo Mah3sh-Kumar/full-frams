@@ -207,7 +207,7 @@ export default function SignUpScreen({ navigation }: Props) {
             }
             
             if (!classLevel.trim()) {
-                newErrors.classLevel = 'Class/Year is required';
+                newErrors.classLevel = 'Class is required';
             }
         }
 
@@ -258,7 +258,17 @@ export default function SignUpScreen({ navigation }: Props) {
             if (error) {
                 Alert.alert('Signup Failed', error);
             } else {
-                Alert.alert('Success', 'Account created successfully!');
+                // Check if email verification is required
+                Alert.alert(
+                    'Verify Your Email', 
+                    'Please check your email inbox and click the verification link to activate your account.',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => navigation.navigate('SignIn')
+                        }
+                    ]
+                );
             }
         } catch (err: any) {
             console.error('Error in handleSignUp:', err);
@@ -511,12 +521,11 @@ export default function SignUpScreen({ navigation }: Props) {
 
                                 {branch && (
                                     <SelectPicker
-                                        label="Class / Year"
+                                        label="Class"
                                         value={classLevel}
                                         items={classes.map(c => ({ 
                                             label: c.name, 
                                             value: c.value,
-                                            description: c.academic_year ? `Year: ${c.academic_year}` : undefined,
                                             icon: c.value.includes('grad') ? 'school-outline' : 'library-outline'
                                         }))}
                                         onValueChange={(value) => setClassLevel(value)}

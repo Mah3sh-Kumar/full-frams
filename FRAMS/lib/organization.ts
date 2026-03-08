@@ -106,7 +106,7 @@ export async function getClasses(
     
     let query = supabase
       .from('classes')          // consolidated schema: org_classes → classes
-      .select('id, name, value, display_order, is_active, academic_year, created_at, updated_at')
+      .select('id, name, value, display_order, is_active, academic_year, branch_id, created_at, updated_at')
       .order('display_order', { ascending: true });
 
     if (!includeInactive) {
@@ -135,6 +135,7 @@ export async function getClasses(
       display_order: item.display_order,
       is_active: item.is_active,
       academic_year: item.academic_year,
+      branch_id: item.branch_id,
       created_at: item.created_at,
       updated_at: item.updated_at,
     })) || [];

@@ -330,9 +330,10 @@ export default function AttendanceManager() {
             ...tokens.shadows.sm,
         },
         statValue: {
-            fontSize: tokens.typography.h2.fontSize,
-            fontWeight: tokens.typography.h2.fontWeight,
+            fontSize: 22,
+            fontWeight: '700',
             color: getTextColor(),
+            lineHeight: 30,
         },
         statLabel: {
             fontSize: tokens.typography.caption.fontSize,
@@ -355,6 +356,8 @@ export default function AttendanceManager() {
             color: getTextColor(),
             borderWidth: 1,
             borderColor: tokens.colors.neutral.gray300,
+            textAlign: 'left',
+            writingDirection: 'ltr',
         },
         studentCard: {
             marginBottom: tokens.spacing.md,
@@ -468,13 +471,15 @@ export default function AttendanceManager() {
             marginRight: tokens.spacing.sm,
         },
         compactName: {
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: '600',
             color: getTextColor(),
+            lineHeight: 24,
         },
         compactEnrollment: {
-            fontSize: 11,
+            fontSize: 12,
             color: getTextSecondaryColor(),
+            lineHeight: 20,
         },
         compactActions: {
             flexDirection: 'row',
@@ -810,8 +815,9 @@ export default function AttendanceManager() {
                                         borderRadius: 4,
                                     }}>
                                         <Text style={{
-                                            fontSize: 11,
+                                            fontSize: 12,
                                             fontWeight: '600',
+                                            lineHeight: 20,
                                             color: item.status === 'present' 
                                                 ? tokens.colors.success.main 
                                                 : item.status === 'absent'
