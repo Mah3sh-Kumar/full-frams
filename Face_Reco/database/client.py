@@ -89,21 +89,29 @@ class SupabaseClient:
                 print(f"Error validating student: {e}")
                 return {"valid": False, "error": f"Validation error: {str(e)}"}
 
-    def _validate_face_encoding(self, face_encoding: List[float]) -> Dict[str, Any]:
+    def _validate_face_encoding(self, face_encoding) -> Dict[str, Any]:
         """
         Validate face encoding has correct format and dimensions.
 
         Args:
-            face_encoding: The face encoding array to validate
+            face_encoding: The face encoding (can be a list or encrypted dict)
 
         Returns:
             Dict with keys:
                 - valid (bool): Whether validation passed
                 - error (str): Error message if validation failed
         """
-        # Check if face_encoding is a list
+        # Check if it's an encrypted encoding (dictionary format)
+        if isinstance(face_encoding, dict):
+            # Encrypted encodings should have specific keys
+            if 'data' in face_encoding or 'encrypted_encoding' in face_encoding:
+                return {"valid": True}  # Accept encrypted format
+            else:
+                return {"valid": False, "error": "Invalid encrypted encoding format"}
+        
+        # Check if face_encoding is a list (unencrypted)
         if not isinstance(face_encoding, list):
-            return {"valid": False, "error": "Face encoding must be a list"}
+            return {"valid": False, "error": "Face encoding must be a list or encrypted dict"}
 
         # Check if length is exactly 1404 (MediaPipe format)
         if len(face_encoding) != 1404:
@@ -166,10 +174,13 @@ class SupabaseClient:
     def get_all_students(self) -> List[Dict[str, Any]]:
         """Fetch all students with their face encodings"""
         try:
-            # Specify the join path to avoid ambiguity
+            # Use new schema fields: class_id, branch_id, department_id
             response = self.client.table('students').select(
-                'id, enrollment_number, class_level, branch, face_encoding, '
-                'users!students_id_fkey(full_name, email)'
+                'id, enrollment_number, class_id, branch_id, department_id, face_encoding, '
+                'users!students_id_fkey(full_name, email), '
+                'classes(name, academic_year), '
+                'branches(name, code), '
+                'org_departments(name)'
             ).execute()
             return response.data
         except Exception as e:
@@ -179,9 +190,13 @@ class SupabaseClient:
     def get_student_by_id(self, student_id: str) -> Optional[Dict[str, Any]]:
         """Fetch a single student by ID"""
         try:
+            # Use new schema fields: class_id, branch_id, department_id
             response = self.client.table('students').select(
-                'id, enrollment_number, class_level, branch, face_encoding, '
-                'users!students_id_fkey(full_name, email)'
+                'id, enrollment_number, class_id, branch_id, department_id, face_encoding, '
+                'users!students_id_fkey(full_name, email), '
+                'classes(name, academic_year), '
+                'branches(name, code), '
+                'org_departments(name)'
             ).eq('id', student_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
@@ -217,12 +232,19 @@ class SupabaseClient:
     def get_subjects_by_class(self, class_id: str) -> List[Dict[str, Any]]:
         """Fetch subjects for a specific class"""
         try:
+            print(f"Querying subjects for class_id: {class_id}")
             response = self.client.table('subjects').select(
-                'id, name, code'
-            ).eq('class_id', class_id).execute()
+                'id, name, code, is_active'
+            ).eq('class_id', class_id).eq('is_active', True).is_('deleted_at', 'null').execute()
+            print(f"Query returned {len(response.data)} subjects")
+            if response.data:
+                for subj in response.data[:3]:  # Print first 3
+                    print(f"  - {subj['name']} ({subj['code']})")
             return response.data
         except Exception as e:
             print(f"Error fetching subjects for class: {e}")
+            import traceback
+            traceback.print_exc()
             return []
     
     # ==================== CLASS OPERATIONS ====================
@@ -367,9 +389,13 @@ class SupabaseClient:
     def get_unregistered_students(self) -> List[Dict[str, Any]]:
         """Fetch students who don't have face encodings yet"""
         try:
+            # Use new schema fields: class_id, branch_id, department_id
             response = self.client.table('students').select(
-                'id, enrollment_number, class_level, branch, '
-                'users!students_id_fkey(full_name, email)'
+                'id, enrollment_number, class_id, branch_id, department_id, '
+                'users!students_id_fkey(full_name, email), '
+                'classes(name, academic_year), '
+                'branches(name, code), '
+                'org_departments(name)'
             ).is_('face_encoding', 'null').execute()
             return response.data
         except Exception as e:
@@ -493,10 +519,31 @@ class SupabaseClient:
                         "requires_confirmation": student_validation.get("requires_confirmation", False)
                     }
 
+                # Validation 4: Check student has required organizational fields
+                student = student_validation["student"]
+                
+                if not student.get('class_id'):
+                    return {
+                        "success": False,
+                        "error": "Student must have a class assigned before face enrollment. Please update student profile in FRAMS app.",
+                        "error_code": "MISSING_CLASS"
+                    }
+                
+                # Note: branch_id and department_id are optional for some students
+                # (e.g., students in non-branch programs), so we don't enforce them
+
                 # All validations passed - construct update data
-                student_data = {
-                    "face_encoding": {"encoding": face_encoding}
-                }
+                # Handle both encrypted and unencrypted encodings
+                if isinstance(face_encoding, dict):
+                    # Already encrypted or in dict format
+                    student_data = {
+                        "face_encoding": face_encoding
+                    }
+                else:
+                    # Plain list format - wrap it
+                    student_data = {
+                        "face_encoding": {"encoding": face_encoding}
+                    }
 
                 # Add optional fields if provided
                 if enrollment_number:

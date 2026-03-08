@@ -9,6 +9,9 @@ numpy==1.26.3
 # Database
 supabase==1.0.3
 
+# Security & Encryption
+cryptography>=41.0.0
+
 # Utilities
 python-dotenv==1.0.0
 Pillow==10.2.0

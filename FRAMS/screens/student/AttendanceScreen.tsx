@@ -174,11 +174,27 @@ export default function AttendanceScreen() {
     ].filter(item => item.population > 0);
 
     const renderCalendarView = () => {
-        const daysInRange: Date[] = [];
-        const current = new Date(dateRange.start);
-        while (current <= dateRange.end) {
-            daysInRange.push(new Date(current));
-            current.setDate(current.getDate() + 1);
+        const currentMonth = new Date(dateRange.start);
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        
+        // Get first day of month and total days
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+        
+        // Create array of dates for the calendar grid
+        const calendarDays: (Date | null)[] = [];
+        
+        // Add empty slots for days before month starts
+        for (let i = 0; i < startingDayOfWeek; i++) {
+            calendarDays.push(null);
+        }
+        
+        // Add all days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            calendarDays.push(new Date(year, month, day));
         }
 
         const getStatusForDate = (date: Date) => {
@@ -188,29 +204,66 @@ export default function AttendanceScreen() {
             return record?.status;
         };
 
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+
         return (
             <Card variant="glassmorphic" style={styles.calendarCard}>
                 <View style={styles.calendarContent}>
                     <Text style={styles.calendarTitle}>Attendance Calendar</Text>
+                    <View style={styles.calendarMonthYear}>
+                        <Ionicons name="calendar-outline" size={20} color={tokens.colors.primary.main} />
+                        <Text style={styles.calendarMonthYearText}>
+                            {monthNames[month]} {year}
+                        </Text>
+                    </View>
+                    
+                    {/* Legend */}
+                    <View style={styles.calendarLegend}>
+                        <View style={styles.legendItem}>
+                            <View style={[styles.legendDot, { backgroundColor: tokens.colors.success.main }]} />
+                            <Text style={styles.legendText}>Present</Text>
+                        </View>
+                        <View style={styles.legendItem}>
+                            <View style={[styles.legendDot, { backgroundColor: tokens.colors.error.main }]} />
+                            <Text style={styles.legendText}>Absent</Text>
+                        </View>
+                        <View style={styles.legendItem}>
+                            <View style={[styles.legendDot, { backgroundColor: tokens.colors.warning.main }]} />
+                            <Text style={styles.legendText}>Late</Text>
+                        </View>
+                    </View>
+
                     <View style={styles.calendarGrid}>
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
                             <View key={i} style={styles.calendarDayHeader}>
                                 <Text style={[styles.calendarDayHeaderText, { color: getTextSecondaryColor() }]}>
                                     {day}
                                 </Text>
                             </View>
                         ))}
-                        {daysInRange.slice(0, 35).map((date, index) => {
+                        {calendarDays.map((date, index) => {
+                            if (!date) {
+                                return <View key={`empty-${index}`} style={styles.calendarDay} />;
+                            }
                             const status = getStatusForDate(date);
+                            const isToday = date.toDateString() === new Date().toDateString();
                             return (
                                 <View key={index} style={styles.calendarDay}>
                                     <View style={[
                                         styles.calendarDayCircle,
-                                        { backgroundColor: status ? getStatusColor(status) + '30' : 'transparent' }
+                                        { 
+                                            backgroundColor: status ? getStatusColor(status) + '25' : 'transparent',
+                                            borderWidth: isToday ? 2 : 0,
+                                            borderColor: isToday ? tokens.colors.primary.main : 'transparent'
+                                        }
                                     ]}>
                                         <Text style={[
                                             styles.calendarDayText,
-                                            { color: status ? getStatusColor(status) : getTextSecondaryColor() }
+                                            { 
+                                                color: status ? getStatusColor(status) : getTextSecondaryColor(),
+                                                fontWeight: isToday ? '700' : '600'
+                                            }
                                         ]}>
                                             {date.getDate()}
                                         </Text>
@@ -238,121 +291,166 @@ export default function AttendanceScreen() {
         header: {
             padding: tokens.spacing.lg,
             paddingTop: tokens.spacing.xl,
+            paddingBottom: tokens.spacing.md,
         },
         title: {
-            fontSize: tokens.typography.h1.fontSize,
-            fontWeight: tokens.typography.h1.fontWeight,
+            fontSize: 28,
+            fontWeight: '700',
             color: getTextColor(),
             marginBottom: tokens.spacing.xs,
+            letterSpacing: -0.5,
         },
         subtitle: {
-            fontSize: tokens.typography.body.fontSize,
+            fontSize: 16,
+            fontWeight: '400',
             color: getTextSecondaryColor(),
+            opacity: 0.8,
         },
         statCard: {
             flex: 1,
+            minWidth: 0,
+            width: '25%',
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.18,
+            shadowRadius: 4,
+            borderRadius: 12,
+            overflow: 'visible',
         },
         statContent: {
-            padding: tokens.spacing.md,
+            padding: 6,
             alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 85,
         },
         statIconContainer: {
-            width: tokens.spacing.xl + tokens.spacing.sm,
-            height: tokens.spacing.xl + tokens.spacing.sm,
+            width: 32,
+            height: 32,
             borderRadius: tokens.borders.radius.medium,
             justifyContent: 'center',
             alignItems: 'center',
-            marginBottom: tokens.spacing.sm,
+            marginBottom: 4,
         },
         statValue: {
-            fontSize: tokens.typography.h2.fontSize,
-            fontWeight: tokens.typography.h2.fontWeight,
+            fontSize: 16,
+            fontWeight: '700',
             color: getTextColor(),
+            letterSpacing: -0.3,
         },
         statLabel: {
-            fontSize: tokens.typography.caption.fontSize,
-            color: tokens.colors.neutral.gray600,
-            marginTop: tokens.spacing.xs / 2,
+            fontSize: 10,
+            fontWeight: '500',
+            color: getTextSecondaryColor(),
+            marginTop: 2,
+            opacity: 0.7,
+            textAlign: 'center',
         },
         chartCard: {
             marginBottom: 0,
+            elevation: 3,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
         },
         chartContent: {
-            padding: tokens.spacing.md,
+            padding: tokens.spacing.lg,
             alignItems: 'center',
         },
         chartTitle: {
-            fontSize: tokens.typography.h3.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 20,
+            fontWeight: '700',
             color: getTextColor(),
-            marginBottom: tokens.spacing.md,
+            marginBottom: tokens.spacing.lg,
+            letterSpacing: -0.3,
         },
         subjectCard: {
             marginBottom: 0,
+            elevation: 3,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
         },
         subjectContent: {
-            padding: tokens.spacing.md,
+            padding: tokens.spacing.lg,
         },
         subjectTitle: {
-            fontSize: tokens.typography.h3.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 20,
+            fontWeight: '700',
             color: getTextColor(),
-            marginBottom: tokens.spacing.md,
+            marginBottom: tokens.spacing.lg,
+            letterSpacing: -0.3,
         },
         subjectRow: {
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            paddingVertical: tokens.spacing.sm,
+            paddingVertical: tokens.spacing.md,
             borderBottomWidth: tokens.borders.width.thin,
-            borderBottomColor: tokens.colors.neutral.gray200,
+            borderBottomColor: getTextSecondaryColor() + '15',
         },
         subjectName: {
-            fontSize: tokens.typography.body.fontSize,
+            fontSize: 16,
+            fontWeight: '500',
             color: getTextColor(),
             flex: 1,
         },
         subjectStats: {
             flexDirection: 'row',
             alignItems: 'center',
-            gap: tokens.spacing.xs,
+            gap: tokens.spacing.sm,
         },
         subjectPercentage: {
-            fontSize: tokens.typography.body.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 16,
+            fontWeight: '700',
             color: tokens.colors.primary.main,
         },
         subjectCount: {
-            fontSize: tokens.typography.caption.fontSize,
-            color: tokens.colors.neutral.gray600,
+            fontSize: 14,
+            fontWeight: '500',
+            color: getTextSecondaryColor(),
+            opacity: 0.7,
         },
         filterButton: {
             flex: 1,
-            paddingVertical: tokens.spacing.sm,
-            paddingHorizontal: tokens.spacing.md,
-            borderRadius: tokens.borders.radius.medium,
-            borderWidth: tokens.borders.width.medium,
-            borderColor: tokens.colors.neutral.gray300,
-            backgroundColor: getSurfaceColor(),
+            minWidth: 0,
+            paddingVertical: 10,
+            paddingHorizontal: 4,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            borderColor: getTextSecondaryColor() + '20',
+            backgroundColor: getSurfaceColor() + '80',
             alignItems: 'center',
+            justifyContent: 'center',
         },
         filterButtonActive: {
             borderColor: tokens.colors.primary.main,
-            backgroundColor: tokens.colors.primary.light,
+            backgroundColor: tokens.colors.primary.main + '15',
+            borderWidth: 1.5,
         },
         filterButtonText: {
-            fontSize: tokens.typography.caption.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
-            color: tokens.colors.neutral.gray600,
+            fontSize: 12,
+            fontWeight: '600',
+            color: getTextSecondaryColor(),
+            textAlign: 'center',
         },
         filterButtonTextActive: {
             color: tokens.colors.primary.main,
+            fontWeight: '700',
+            textAlign: 'center',
         },
         recordCard: {
             marginBottom: 0,
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.12,
+            shadowRadius: 3,
         },
         recordContent: {
-            padding: tokens.spacing.md,
+            padding: tokens.spacing.lg,
         },
         recordHeader: {
             flexDirection: 'row',
@@ -363,26 +461,30 @@ export default function AttendanceScreen() {
             flex: 1,
         },
         recordSubject: {
-            fontSize: tokens.typography.h3.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 18,
+            fontWeight: '600',
             color: getTextColor(),
-            marginBottom: tokens.spacing.xs / 2,
+            marginBottom: tokens.spacing.xs,
+            letterSpacing: -0.2,
         },
         recordDate: {
-            fontSize: tokens.typography.caption.fontSize,
-            color: tokens.colors.neutral.gray600,
+            fontSize: 14,
+            fontWeight: '500',
+            color: getTextSecondaryColor(),
+            opacity: 0.7,
         },
         statusBadge: {
             flexDirection: 'row',
             alignItems: 'center',
-            paddingVertical: tokens.spacing.xs / 2,
-            paddingHorizontal: tokens.spacing.sm,
-            borderRadius: tokens.borders.radius.small,
-            gap: tokens.spacing.xs / 2,
+            paddingVertical: tokens.spacing.xs,
+            paddingHorizontal: tokens.spacing.md,
+            borderRadius: 20,
+            gap: tokens.spacing.xs,
         },
         statusText: {
-            fontSize: tokens.typography.caption.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 13,
+            fontWeight: '700',
+            letterSpacing: 0.3,
         },
         dateRangeContainer: {
             paddingHorizontal: tokens.spacing.md,
@@ -399,94 +501,151 @@ export default function AttendanceScreen() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingVertical: tokens.spacing.sm,
-            borderRadius: tokens.borders.radius.medium,
-            borderWidth: tokens.borders.width.medium,
-            borderColor: tokens.colors.neutral.gray300,
-            backgroundColor: getSurfaceColor(),
-            gap: tokens.spacing.xs,
+            paddingVertical: tokens.spacing.md,
+            borderRadius: 20,
+            borderWidth: 2,
+            borderColor: getTextSecondaryColor() + '20',
+            backgroundColor: getSurfaceColor() + '80',
+            gap: tokens.spacing.sm,
         },
         viewToggleButtonActive: {
             borderColor: tokens.colors.primary.main,
-            backgroundColor: tokens.colors.primary.light,
+            backgroundColor: tokens.colors.primary.main + '15',
         },
         viewToggleButtonText: {
-            fontSize: tokens.typography.body.fontSize,
+            fontSize: 15,
             fontWeight: '600',
             color: getTextSecondaryColor(),
         },
         viewToggleButtonTextActive: {
             color: tokens.colors.primary.main,
+            fontWeight: '700',
         },
         streakCard: {
             marginBottom: 0,
+            elevation: 3,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
         },
         streakContent: {
-            padding: tokens.spacing.md,
+            padding: tokens.spacing.lg,
             flexDirection: 'row',
-            gap: tokens.spacing.md,
+            gap: tokens.spacing.lg,
         },
         streakItem: {
             flex: 1,
             alignItems: 'center',
-            padding: tokens.spacing.sm,
-            borderRadius: tokens.borders.radius.medium,
+            padding: tokens.spacing.lg,
+            borderRadius: 20,
         },
         streakValue: {
-            fontSize: tokens.typography.h2.fontSize,
-            fontWeight: '700',
-            marginVertical: tokens.spacing.xs,
+            fontSize: 32,
+            fontWeight: '800',
+            marginVertical: tokens.spacing.sm,
+            letterSpacing: -1,
         },
         streakLabel: {
-            fontSize: tokens.typography.caption.fontSize,
-            fontWeight: '500',
+            fontSize: 14,
+            fontWeight: '600',
         },
         chartInteractiveHint: {
-            fontSize: tokens.typography.caption.fontSize,
+            fontSize: 13,
+            fontWeight: '500',
             color: getTextSecondaryColor(),
-            marginTop: tokens.spacing.sm,
+            marginTop: tokens.spacing.md,
             textAlign: 'center',
             fontStyle: 'italic',
+            opacity: 0.7,
         },
         calendarCard: {
             marginBottom: 0,
+            elevation: 3,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
         },
         calendarContent: {
-            padding: tokens.spacing.md,
+            padding: tokens.spacing.lg,
         },
         calendarTitle: {
-            fontSize: tokens.typography.h3.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 20,
+            fontWeight: '700',
             color: getTextColor(),
+            marginBottom: tokens.spacing.sm,
+            letterSpacing: -0.3,
+        },
+        calendarMonthYear: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: tokens.spacing.sm,
             marginBottom: tokens.spacing.md,
+            paddingVertical: tokens.spacing.sm,
+            paddingHorizontal: tokens.spacing.md,
+            backgroundColor: tokens.colors.primary.main + '10',
+            borderRadius: 12,
+            alignSelf: 'flex-start',
+        },
+        calendarMonthYearText: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: tokens.colors.primary.main,
+            letterSpacing: -0.2,
+        },
+        calendarLegend: {
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            marginBottom: tokens.spacing.lg,
+            paddingVertical: tokens.spacing.sm,
+            paddingHorizontal: tokens.spacing.xs,
+            backgroundColor: getTextSecondaryColor() + '08',
+            borderRadius: 12,
+        },
+        legendItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: tokens.spacing.xs,
+        },
+        legendDot: {
+            width: 10,
+            height: 10,
+            borderRadius: 5,
+        },
+        legendText: {
+            fontSize: 12,
+            fontWeight: '500',
+            color: getTextSecondaryColor(),
         },
         calendarGrid: {
             flexDirection: 'row',
             flexWrap: 'wrap',
+            width: '100%',
         },
         calendarDayHeader: {
             width: `${100 / 7}%`,
             alignItems: 'center',
-            paddingVertical: tokens.spacing.xs,
+            paddingVertical: tokens.spacing.sm,
         },
         calendarDayHeaderText: {
-            fontSize: tokens.typography.caption.fontSize,
-            fontWeight: '600',
+            fontSize: 12,
+            fontWeight: '700',
         },
         calendarDay: {
             width: `${100 / 7}%`,
             aspectRatio: 1,
-            padding: 2,
+            padding: 3,
         },
         calendarDayCircle: {
             flex: 1,
-            borderRadius: 100,
+            borderRadius: 8,
             justifyContent: 'center',
             alignItems: 'center',
         },
         calendarDayText: {
-            fontSize: tokens.typography.caption.fontSize,
-            fontWeight: '500',
+            fontSize: 14,
+            fontWeight: '600',
         },
     });
 
@@ -504,6 +663,8 @@ export default function AttendanceScreen() {
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: tokens.spacing.xl }}
             >
                 <View style={styles.header}>
                     <Text style={styles.title}>My Attendance</Text>
@@ -531,7 +692,8 @@ export default function AttendanceScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <Stack spacing="md" style={{ paddingHorizontal: tokens.spacing.md }}>
+                <View style={{ paddingHorizontal: tokens.spacing.md }}>
+                    <Stack spacing="md" style={{ maxWidth: '100%' }}>
                     {/* Streak Indicators */}
                     {(currentStreak > 0 || longestStreak > 0) && (
                         <Card variant="glassmorphic" style={styles.streakCard}>
@@ -553,47 +715,49 @@ export default function AttendanceScreen() {
                             </View>
                         </Card>
                     )}
-                    <Row spacing="sm">
-                        <Card variant="glassmorphic" style={styles.statCard}>
-                            <View style={styles.statContent}>
-                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.success.light }]}>
-                                    <Ionicons name="stats-chart" size={20} color={tokens.colors.success.main} />
+                    <View style={{ width: '100%', overflow: 'hidden' }}>
+                        <View style={{ flexDirection: 'row', gap: 4, justifyContent: 'space-between' }}>
+                            <View style={styles.statCard}>
+                                <View style={[styles.statContent, { backgroundColor: getSurfaceColor(), borderRadius: 12 }]}>
+                                    <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.success.main + '20' }]}>
+                                        <Ionicons name="stats-chart" size={16} color={tokens.colors.success.main} />
+                                    </View>
+                                    <Text style={styles.statValue}>{stats.percentage}%</Text>
+                                    <Text style={styles.statLabel} numberOfLines={1}>Overall</Text>
                                 </View>
-                                <Text style={styles.statValue}>{stats.percentage}%</Text>
-                                <Text style={styles.statLabel}>Overall</Text>
                             </View>
-                        </Card>
 
-                        <Card variant="glassmorphic" style={styles.statCard}>
-                            <View style={styles.statContent}>
-                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.success.light }]}>
-                                    <Ionicons name="checkmark-circle" size={20} color={tokens.colors.success.main} />
+                            <View style={styles.statCard}>
+                                <View style={[styles.statContent, { backgroundColor: getSurfaceColor(), borderRadius: 12 }]}>
+                                    <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.success.main + '20' }]}>
+                                        <Ionicons name="checkmark-circle" size={16} color={tokens.colors.success.main} />
+                                    </View>
+                                    <Text style={styles.statValue}>{stats.present}</Text>
+                                    <Text style={styles.statLabel} numberOfLines={1}>Present</Text>
                                 </View>
-                                <Text style={styles.statValue}>{stats.present}</Text>
-                                <Text style={styles.statLabel}>Present</Text>
                             </View>
-                        </Card>
 
-                        <Card variant="glassmorphic" style={styles.statCard}>
-                            <View style={styles.statContent}>
-                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.error.light }]}>
-                                    <Ionicons name="close-circle" size={20} color={tokens.colors.error.main} />
+                            <View style={styles.statCard}>
+                                <View style={[styles.statContent, { backgroundColor: getSurfaceColor(), borderRadius: 12 }]}>
+                                    <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.error.main + '20' }]}>
+                                        <Ionicons name="close-circle" size={16} color={tokens.colors.error.main} />
+                                    </View>
+                                    <Text style={styles.statValue}>{stats.absent}</Text>
+                                    <Text style={styles.statLabel} numberOfLines={1}>Absent</Text>
                                 </View>
-                                <Text style={styles.statValue}>{stats.absent}</Text>
-                                <Text style={styles.statLabel}>Absent</Text>
                             </View>
-                        </Card>
 
-                        <Card variant="glassmorphic" style={styles.statCard}>
-                            <View style={styles.statContent}>
-                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.warning.light }]}>
-                                    <Ionicons name="time" size={20} color={tokens.colors.warning.main} />
+                            <View style={styles.statCard}>
+                                <View style={[styles.statContent, { backgroundColor: getSurfaceColor(), borderRadius: 12 }]}>
+                                    <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.warning.main + '20' }]}>
+                                        <Ionicons name="time" size={16} color={tokens.colors.warning.main} />
+                                    </View>
+                                    <Text style={styles.statValue}>{stats.late}</Text>
+                                    <Text style={styles.statLabel} numberOfLines={1}>Late</Text>
                                 </View>
-                                <Text style={styles.statValue}>{stats.late}</Text>
-                                <Text style={styles.statLabel}>Late</Text>
                             </View>
-                        </Card>
-                    </Row>
+                        </View>
+                    </View>
 
                     {stats.total > 0 && (
                         <Card variant="glassmorphic" style={styles.chartCard}>
@@ -652,8 +816,9 @@ export default function AttendanceScreen() {
                         </Card>
                     )}
 
-                    <Row spacing="sm">
-                        {['all', 'present', 'absent', 'late'].map((status) => (
+                    <View style={{ width: '100%', paddingHorizontal: 2 }}>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                            {['all', 'present', 'absent', 'late'].map((status) => (
                             <TouchableOpacity
                                 key={status}
                                 style={[styles.filterButton, filterStatus === status && styles.filterButtonActive]}
@@ -665,12 +830,18 @@ export default function AttendanceScreen() {
                                 accessibilityRole="button"
                                 accessibilityState={{ selected: filterStatus === status }}
                             >
-                                <Text style={[styles.filterButtonText, filterStatus === status && styles.filterButtonTextActive]}>
+                                <Text 
+                                    style={[styles.filterButtonText, filterStatus === status && styles.filterButtonTextActive]}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                    minimumFontScale={0.8}
+                                >
                                     {status.charAt(0).toUpperCase() + status.slice(1)}
                                 </Text>
                             </TouchableOpacity>
-                        ))}
-                    </Row>
+                            ))}
+                        </View>
+                    </View>
 
                     {viewMode === 'calendar' ? (
                         renderCalendarView()
@@ -716,7 +887,8 @@ export default function AttendanceScreen() {
                         )}
                     </Stack>
                     )}
-                </Stack>
+                    </Stack>
+                </View>
             </ScrollView>
         </View>
     );

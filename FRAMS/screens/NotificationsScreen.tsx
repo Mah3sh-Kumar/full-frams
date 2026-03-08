@@ -206,9 +206,6 @@ export default function NotificationsScreen({ navigation }: Props) {
     if (notifications.length === 0) {
         return (
             <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
-                <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>
-                    <Text style={[styles.headerTitle, { color: tokens.colors.neutral.white }]}>Notifications</Text>
-                </View>
                 <EmptyState
                     icon="bell-outline"
                     title="No Notifications"
@@ -220,8 +217,7 @@ export default function NotificationsScreen({ navigation }: Props) {
 
     return (
         <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
-            <View style={[styles.header, { backgroundColor: tokens.colors.roles.admin.main }]}>
-                <Text style={[styles.headerTitle, { color: tokens.colors.neutral.white }]}>Notifications</Text>
+            <View style={styles.headerActions}>
                 {notifications.length > 0 && (
                     <Button
                         variant="ghost"
@@ -252,24 +248,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    header: {
+    headerActions: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
-        paddingTop: 45,
-        paddingHorizontal: 26,
-        paddingBottom: 33,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: tokens.colors.neutral.white,
-        lineHeight: 28,
+        paddingHorizontal: tokens.spacing.md,
+        paddingTop: tokens.spacing.md,
+        paddingBottom: tokens.spacing.sm,
     },
     sectionHeader: {
         paddingHorizontal: tokens.spacing.md,

@@ -53,8 +53,8 @@ export async function createStudentProfile(
     userId: string,
     enrollmentNumber: string,
     classId: string | null,
-    classLevel: string | null = null,
-    branch: string | null = null
+    branchId: string | null = null,
+    departmentId: string | null = null
 ) {
     try {
         // Validate required fields
@@ -67,9 +67,9 @@ export async function createStudentProfile(
             .insert({
                 id: userId,
                 enrollment_number: enrollmentNumber,
-                class_id: classId,        // consolidated schema: class_id (not org_class_id)
-                class_level: classLevel,
-                branch: branch,
+                class_id: classId,
+                branch_id: branchId,
+                department_id: departmentId,
             })
             .select()
             .single();

@@ -203,9 +203,51 @@ function Navigation() {
             <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
 
             {/* Common Screens */}
-            <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+            <Stack.Screen 
+              name="Profile" 
+              component={ProfileScreen} 
+              options={{ headerShown: false }} 
+            />
+            <Stack.Screen 
+              name="Notifications" 
+              component={NotificationsScreen} 
+              options={{
+                headerStyle: { 
+                  backgroundColor: role === 'student' 
+                    ? tokens.colors.roles.student.main 
+                    : role === 'teacher' 
+                    ? tokens.colors.roles.teacher.main 
+                    : tokens.colors.roles.admin.main,
+                  elevation: 0,
+                  shadowOpacity: 0,
+                },
+                headerTintColor: '#FFFFFF',
+                headerTitleStyle: {
+                  fontWeight: '600',
+                },
+                headerLeft: () => null,
+              }}
+            />
+            <Stack.Screen 
+              name="Settings" 
+              component={SettingsScreen} 
+              options={{
+                headerStyle: { 
+                  backgroundColor: role === 'student' 
+                    ? tokens.colors.roles.student.main 
+                    : role === 'teacher' 
+                    ? tokens.colors.roles.teacher.main 
+                    : tokens.colors.roles.admin.main,
+                  elevation: 0,
+                  shadowOpacity: 0,
+                },
+                headerTintColor: '#FFFFFF',
+                headerTitleStyle: {
+                  fontWeight: '600',
+                },
+                headerLeft: () => null,
+              }}
+            />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy' }} />
             <Stack.Screen name="Terms" component={TermsScreen} options={{ title: 'Terms of Service' }} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: 'Change Password' }} />
@@ -213,17 +255,95 @@ function Navigation() {
             {/* Student Stack */}
             {role === 'student' && (
               <>
-                <Stack.Screen name="Attendance" component={AttendanceScreen} />
-                <Stack.Screen name="Assignments" component={AssignmentScreen} />
+                <Stack.Screen 
+                  name="Attendance" 
+                  component={AttendanceScreen}
+                  options={{
+                    headerStyle: { 
+                      backgroundColor: tokens.colors.roles.student.main,
+                      elevation: 0,
+                      shadowOpacity: 0,
+                    },
+                    headerTintColor: '#FFFFFF',
+                    headerTitleStyle: {
+                      fontWeight: '600',
+                    },
+                    headerLeft: () => null,
+                  }}
+                />
+                <Stack.Screen 
+                  name="Assignments" 
+                  component={AssignmentScreen}
+                  options={{
+                    headerStyle: { 
+                      backgroundColor: tokens.colors.roles.student.main,
+                      elevation: 0,
+                      shadowOpacity: 0,
+                    },
+                    headerTintColor: '#FFFFFF',
+                    headerTitleStyle: {
+                      fontWeight: '600',
+                    },
+                    headerLeft: () => null,
+                  }}
+                />
               </>
             )}
 
             {/* Teacher Stack */}
             {role === 'teacher' && (
               <>
-                <Stack.Screen name="AttendanceManager" component={AttendanceManager} />
-                <Stack.Screen name="AssignmentManager" component={AssignmentManager} />
-                <Stack.Screen name="MarksReviewManager" component={MarksReviewManager} />
+                <Stack.Screen 
+                  name="AttendanceManager" 
+                  component={AttendanceManager}
+                  options={{
+                    title: 'Attendance Manager',
+                    headerStyle: { 
+                      backgroundColor: tokens.colors.roles.teacher.main,
+                      elevation: 0,
+                      shadowOpacity: 0,
+                    },
+                    headerTintColor: '#FFFFFF',
+                    headerTitleStyle: {
+                      fontWeight: '600',
+                    },
+                    headerLeft: () => null,
+                  }}
+                />
+                <Stack.Screen 
+                  name="AssignmentManager" 
+                  component={AssignmentManager}
+                  options={{
+                    title: 'Assignment Manager',
+                    headerStyle: { 
+                      backgroundColor: tokens.colors.roles.teacher.main,
+                      elevation: 0,
+                      shadowOpacity: 0,
+                    },
+                    headerTintColor: '#FFFFFF',
+                    headerTitleStyle: {
+                      fontWeight: '600',
+                    },
+                    headerLeft: () => null,
+                  }}
+                />
+                <Stack.Screen 
+                  name="MarksReviewManager" 
+                  component={MarksReviewManager}
+                  options={{
+                    title: 'Marks Review',
+                    headerStyle: { 
+                      backgroundColor: tokens.colors.roles.teacher.main,
+                      elevation: 0,
+                      shadowOpacity: 0,
+                    },
+                    headerTintColor: '#FFFFFF',
+                    headerTitleStyle: {
+                      fontWeight: '600',
+                    },
+                    headerLeft: () => null,
+                  }}
+                />
               </>
             )}
 

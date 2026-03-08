@@ -1,0 +1,16 @@
+{
+  "table": "academic_years",
+  "timestamp": "2026-03-08T14:02:48.297776",
+  "record_count": 1,
+  "data": [
+    {
+      "id": "c397c529-c1ea-4a4c-a666-44ffd2ff3e69",
+      "name": "2024-2025",
+      "start_date": "2024-08-01",
+      "end_date": "2025-07-31",
+      "is_current": true,
+      "created_at": "2026-02-28T08:41:09.839914+00:00",
+      "updated_at": "2026-02-28T08:41:09.839914+00:00"
+    }
+  ]
+}

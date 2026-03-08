@@ -12,7 +12,7 @@ from config.config import Config
 from .dashboard import DashboardWidget
 from .session_setup import SessionSetupWidget
 from .recognition_view import RecognitionWidget
-from .registration_view import RegistrationWidget
+from .enhanced_registration_view import EnhancedRegistrationWidget
 from .login_view import LoginWidget
 from .styles import Styles
 
@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(self.recognition_view)
         
         # Registration View
-        self.registration_view = RegistrationWidget(self)
+        self.registration_view = EnhancedRegistrationWidget(self)
         self.registration_view.back_requested.connect(self.show_dashboard)
         self.registration_view.registration_complete.connect(self.show_dashboard)
         self.stacked_widget.addWidget(self.registration_view)

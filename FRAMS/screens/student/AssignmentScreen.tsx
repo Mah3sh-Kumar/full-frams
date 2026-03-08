@@ -31,7 +31,7 @@ type Assignment = {
 };
 
 export default function AssignmentScreen() {
-    const { tokens, getTextColor, getSurfaceColor } = useTheme();
+    const { tokens, getTextColor, getSurfaceColor, getBackgroundColor, getTextSecondaryColor, getBorderColor } = useTheme();
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -118,160 +118,198 @@ export default function AssignmentScreen() {
     const styles = StyleSheet.create({
         container: {
             flex: 1,
-            backgroundColor: tokens.colors.theme.light.background,
+            backgroundColor: getBackgroundColor(),
         },
         loadingContainer: {
             flex: 1,
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: tokens.colors.theme.light.background,
+            backgroundColor: getBackgroundColor(),
         },
         header: {
             padding: tokens.spacing.lg,
             paddingTop: tokens.spacing.xl,
+            paddingBottom: tokens.spacing.md,
         },
         title: {
-            fontSize: tokens.typography.h1.fontSize,
-            fontWeight: tokens.typography.h1.fontWeight,
+            fontSize: 28,
+            fontWeight: '700',
             color: getTextColor(),
             marginBottom: tokens.spacing.xs,
+            letterSpacing: -0.5,
         },
         subtitle: {
-            fontSize: tokens.typography.body.fontSize,
-            color: tokens.colors.neutral.gray600,
+            fontSize: 16,
+            fontWeight: '400',
+            color: getTextSecondaryColor(),
+            opacity: 0.8,
         },
         statCard: {
             flex: 1,
+            minWidth: 0,
+            width: '25%',
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.18,
+            shadowRadius: 4,
+            borderRadius: 12,
+            overflow: 'visible',
         },
         statContent: {
-            padding: tokens.spacing.md,
+            padding: 6,
             alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 85,
         },
         statIconContainer: {
-            width: tokens.spacing.xl + tokens.spacing.sm,
-            height: tokens.spacing.xl + tokens.spacing.sm,
+            width: 32,
+            height: 32,
             borderRadius: tokens.borders.radius.medium,
             justifyContent: 'center',
             alignItems: 'center',
-            marginBottom: tokens.spacing.sm,
+            marginBottom: 4,
         },
         statValue: {
-            fontSize: tokens.typography.h2.fontSize,
-            fontWeight: tokens.typography.h2.fontWeight,
+            fontSize: 16,
+            fontWeight: '700',
             color: getTextColor(),
+            letterSpacing: -0.3,
         },
         statLabel: {
-            fontSize: tokens.typography.caption.fontSize,
-            color: tokens.colors.neutral.gray600,
-            marginTop: tokens.spacing.xs / 2,
+            fontSize: 9,
+            fontWeight: '500',
+            color: getTextSecondaryColor(),
+            marginTop: 2,
+            opacity: 0.7,
+            textAlign: 'center',
         },
         searchInput: {
             backgroundColor: getSurfaceColor(),
-            borderRadius: tokens.borders.radius.medium,
-            borderWidth: tokens.borders.width.thin,
-            borderColor: tokens.colors.neutral.gray300,
-            paddingHorizontal: tokens.spacing.md,
-            paddingVertical: tokens.spacing.sm,
-            fontSize: tokens.typography.body.fontSize,
+            borderRadius: 20,
+            borderWidth: 2,
+            borderColor: getBorderColor(),
+            paddingHorizontal: tokens.spacing.lg,
+            paddingVertical: tokens.spacing.md,
+            fontSize: 16,
+            fontWeight: '500',
             color: getTextColor(),
         },
         filterButton: {
             flex: 1,
-            paddingVertical: tokens.spacing.sm,
-            paddingHorizontal: tokens.spacing.xs,
-            borderRadius: tokens.borders.radius.medium,
-            borderWidth: tokens.borders.width.medium,
-            borderColor: tokens.colors.neutral.gray300,
+            minWidth: 0,
+            paddingVertical: 10,
+            paddingHorizontal: 4,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            borderColor: getBorderColor(),
             backgroundColor: getSurfaceColor(),
             alignItems: 'center',
+            justifyContent: 'center',
         },
         filterButtonActive: {
             borderColor: tokens.colors.primary.main,
-            backgroundColor: tokens.colors.primary.light,
+            backgroundColor: tokens.colors.primary.main + '15',
+            borderWidth: 1.5,
         },
         filterButtonText: {
-            fontSize: tokens.typography.caption.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
-            color: tokens.colors.neutral.gray600,
+            fontSize: 11,
+            fontWeight: '600',
+            color: getTextSecondaryColor(),
+            textAlign: 'center',
         },
         filterButtonTextActive: {
             color: tokens.colors.primary.main,
+            fontWeight: '700',
+            textAlign: 'center',
         },
         assignmentCard: {
             marginBottom: 0,
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.12,
+            shadowRadius: 3,
         },
         cardContent: {
-            padding: tokens.spacing.md,
+            padding: tokens.spacing.lg,
         },
         cardHeader: {
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            marginBottom: tokens.spacing.sm,
+            marginBottom: tokens.spacing.md,
         },
         cardTitleContainer: {
             flex: 1,
-            marginRight: tokens.spacing.sm,
+            marginRight: tokens.spacing.md,
         },
         assignmentTitle: {
-            fontSize: tokens.typography.h3.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 18,
+            fontWeight: '600',
             color: getTextColor(),
-            marginBottom: tokens.spacing.xs / 2,
+            marginBottom: tokens.spacing.xs,
+            letterSpacing: -0.2,
         },
         subjectName: {
-            fontSize: tokens.typography.caption.fontSize,
-            color: tokens.colors.neutral.gray600,
+            fontSize: 14,
+            fontWeight: '500',
+            color: getTextSecondaryColor(),
+            opacity: 0.7,
         },
         statusBadge: {
             flexDirection: 'row',
             alignItems: 'center',
-            paddingVertical: tokens.spacing.xs / 2,
-            paddingHorizontal: tokens.spacing.sm,
-            borderRadius: tokens.borders.radius.small,
-            gap: tokens.spacing.xs / 2,
+            paddingVertical: tokens.spacing.xs,
+            paddingHorizontal: tokens.spacing.md,
+            borderRadius: 20,
+            gap: tokens.spacing.xs,
         },
         statusText: {
-            fontSize: tokens.typography.caption.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 13,
+            fontWeight: '700',
+            letterSpacing: 0.3,
         },
         description: {
-            fontSize: tokens.typography.body.fontSize,
-            color: tokens.colors.neutral.gray600,
-            marginBottom: tokens.spacing.sm,
-            lineHeight: 20,
+            fontSize: 15,
+            fontWeight: '400',
+            color: getTextSecondaryColor(),
+            marginBottom: tokens.spacing.md,
+            lineHeight: 22,
+            opacity: 0.8,
         },
         cardFooter: {
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: tokens.spacing.sm,
+            marginTop: tokens.spacing.md,
         },
         dueDateContainer: {
             flexDirection: 'row',
             alignItems: 'center',
-            gap: tokens.spacing.xs,
+            gap: tokens.spacing.sm,
         },
         dueDate: {
-            fontSize: tokens.typography.caption.fontSize,
-            color: tokens.colors.neutral.gray600,
+            fontSize: 14,
+            fontWeight: '500',
+            color: getTextSecondaryColor(),
         },
         overdueText: {
             color: tokens.colors.error.main,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontWeight: '700',
         },
         scoreBadge: {
             flexDirection: 'row',
             alignItems: 'center',
-            paddingVertical: tokens.spacing.xs / 2,
-            paddingHorizontal: tokens.spacing.sm,
-            borderRadius: tokens.borders.radius.small,
-            backgroundColor: tokens.colors.success.light,
-            gap: tokens.spacing.xs / 2,
+            paddingVertical: tokens.spacing.xs,
+            paddingHorizontal: tokens.spacing.md,
+            borderRadius: 20,
+            backgroundColor: tokens.colors.success.main + '20',
+            gap: tokens.spacing.xs,
         },
         scoreText: {
-            fontSize: tokens.typography.caption.fontSize,
-            fontWeight: tokens.typography.h3.fontWeight,
+            fontSize: 14,
+            fontWeight: '700',
             color: tokens.colors.success.main,
         },
     });
@@ -292,65 +330,70 @@ export default function AssignmentScreen() {
                 }
                 keyboardShouldPersistTaps="always"
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: tokens.spacing.xl }}
             >
                 <View style={styles.header}>
                     <Text style={styles.title}>My Assignments</Text>
                     <Text style={styles.subtitle}>Track your coursework</Text>
                 </View>
 
-                <Stack spacing="md" style={{ paddingHorizontal: tokens.spacing.md }}>
-                    <Row spacing="sm">
-                        <Card variant="glassmorphic" style={styles.statCard}>
-                            <View style={styles.statContent}>
-                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.warning.light }]}>
-                                    <Ionicons name="time-outline" size={20} color={tokens.colors.warning.main} />
+                <View style={{ paddingHorizontal: tokens.spacing.md }}>
+                    <Stack spacing="md" style={{ maxWidth: '100%' }}>
+                    <View style={{ width: '100%', overflow: 'hidden' }}>
+                        <View style={{ flexDirection: 'row', gap: 4, justifyContent: 'space-between' }}>
+                            <View style={styles.statCard}>
+                            <View style={[styles.statContent, { backgroundColor: getSurfaceColor(), borderRadius: 12 }]}>
+                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.warning.main + '20' }]}>
+                                    <Ionicons name="time-outline" size={16} color={tokens.colors.warning.main} />
                                 </View>
                                 <Text style={styles.statValue}>{stats.pending}</Text>
-                                <Text style={styles.statLabel}>Pending</Text>
+                                <Text style={styles.statLabel} numberOfLines={1}>Pending</Text>
                             </View>
-                        </Card>
+                        </View>
 
-                        <Card variant="glassmorphic" style={styles.statCard}>
-                            <View style={styles.statContent}>
-                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.info.light }]}>
-                                    <Ionicons name="document-text" size={20} color={tokens.colors.info.main} />
+                        <View style={styles.statCard}>
+                            <View style={[styles.statContent, { backgroundColor: getSurfaceColor(), borderRadius: 12 }]}>
+                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.info.main + '20' }]}>
+                                    <Ionicons name="document-text" size={16} color={tokens.colors.info.main} />
                                 </View>
                                 <Text style={styles.statValue}>{stats.submitted}</Text>
-                                <Text style={styles.statLabel}>Submitted</Text>
+                                <Text style={styles.statLabel} numberOfLines={1}>Submitted</Text>
                             </View>
-                        </Card>
+                        </View>
 
-                        <Card variant="glassmorphic" style={styles.statCard}>
-                            <View style={styles.statContent}>
-                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.success.light }]}>
-                                    <Ionicons name="checkmark-circle" size={20} color={tokens.colors.success.main} />
+                        <View style={styles.statCard}>
+                            <View style={[styles.statContent, { backgroundColor: getSurfaceColor(), borderRadius: 12 }]}>
+                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.success.main + '20' }]}>
+                                    <Ionicons name="checkmark-circle" size={16} color={tokens.colors.success.main} />
                                 </View>
                                 <Text style={styles.statValue}>{stats.graded}</Text>
-                                <Text style={styles.statLabel}>Graded</Text>
+                                <Text style={styles.statLabel} numberOfLines={1}>Graded</Text>
                             </View>
-                        </Card>
+                        </View>
 
-                        <Card variant="glassmorphic" style={styles.statCard}>
-                            <View style={styles.statContent}>
-                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.primary.light }]}>
-                                    <Ionicons name="star" size={20} color={tokens.colors.primary.main} />
+                        <View style={styles.statCard}>
+                            <View style={[styles.statContent, { backgroundColor: getSurfaceColor(), borderRadius: 12 }]}>
+                                <View style={[styles.statIconContainer, { backgroundColor: tokens.colors.primary.main + '20' }]}>
+                                    <Ionicons name="star" size={16} color={tokens.colors.primary.main} />
                                 </View>
                                 <Text style={styles.statValue}>{stats.avgScore.toFixed(0)}</Text>
-                                <Text style={styles.statLabel}>Avg Score</Text>
+                                <Text style={styles.statLabel} numberOfLines={1}>Avg Score</Text>
                             </View>
-                        </Card>
-                    </Row>
+                        </View>
+                        </View>
+                    </View>
 
                     <TextInput
                         style={styles.searchInput}
                         placeholder="Search assignments..."
-                        placeholderTextColor={tokens.colors.neutral.gray400}
+                        placeholderTextColor={getTextSecondaryColor() + '80'}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
 
-                    <Row spacing="sm">
-                        {['all', 'pending', 'submitted', 'graded'].map((status) => (
+                    <View style={{ width: '100%', paddingHorizontal: 2 }}>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                            {['all', 'pending', 'submitted', 'graded'].map((status) => (
                             <TouchableOpacity
                                 key={status}
                                 style={[styles.filterButton, filterStatus === status && styles.filterButtonActive]}
@@ -359,12 +402,18 @@ export default function AssignmentScreen() {
                                 accessibilityRole="button"
                                 accessibilityState={{ selected: filterStatus === status }}
                             >
-                                <Text style={[styles.filterButtonText, filterStatus === status && styles.filterButtonTextActive]}>
+                                <Text 
+                                    style={[styles.filterButtonText, filterStatus === status && styles.filterButtonTextActive]}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                    minimumFontScale={0.75}
+                                >
                                     {status.charAt(0).toUpperCase() + status.slice(1)}
                                 </Text>
                             </TouchableOpacity>
-                        ))}
-                    </Row>
+                            ))}
+                        </View>
+                    </View>
 
                     {filteredAssignments.length === 0 ? (
                         <EmptyState
@@ -417,7 +466,7 @@ export default function AssignmentScreen() {
                                                             <Ionicons
                                                                 name={overdue ? "alert-circle" : "calendar"}
                                                                 size={16}
-                                                                color={overdue ? tokens.colors.error.main : tokens.colors.neutral.gray600}
+                                                                color={overdue ? tokens.colors.error.main : getTextSecondaryColor()}
                                                             />
                                                             <Text style={[
                                                                 styles.dueDate,
@@ -454,7 +503,8 @@ export default function AssignmentScreen() {
                             })}
                         </Stack>
                     )}
-                </Stack>
+                    </Stack>
+                </View>
             </ScrollView>
         </View>
     );

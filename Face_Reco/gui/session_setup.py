@@ -104,8 +104,10 @@ class SessionSetupWidget(QWidget):
     def load_data(self):
         """Load classes and subjects from database"""
         try:
+            print("Loading session setup data...")
             # Load classes
             classes = self.db.get_all_classes()
+            print(f"Loaded {len(classes)} classes")
             self.class_combo.clear()
             
             if not classes:
@@ -129,14 +131,19 @@ class SessionSetupWidget(QWidget):
                 display_name = f"{cls['name']} ({cls['academic_year']})"
                 self.class_combo.addItem(display_name, cls['id'])
                 self.class_data[cls['id']] = cls
+                print(f"  - Class: {display_name}")
             
             # Load subjects for first class
             if classes:
                 self._on_class_changed(0)
             
             self.start_btn.setEnabled(True)
+            print("Session setup data loaded successfully")
         
         except Exception as e:
+            print(f"Error loading session setup data: {e}")
+            import traceback
+            traceback.print_exc()
             QMessageBox.critical(
                 self,
                 "Error",
@@ -147,30 +154,39 @@ class SessionSetupWidget(QWidget):
     
     def _on_class_changed(self, index: int):
         """Handle class selection change"""
+        print(f"Class changed: index={index}")
         if index < 0:
             return
         
         class_id = self.class_combo.currentData()
+        class_name = self.class_combo.currentText()
+        print(f"Selected class: {class_name} (ID: {class_id})")
         if not class_id:
             return
         
         try:
             # Load subjects for selected class
             subjects = self.db.get_subjects_by_class(class_id)
+            print(f"Loaded {len(subjects)} subjects for class {class_name}")
             self.subject_combo.clear()
             
             if not subjects:
                 self.subject_combo.addItem("⚠️ No subjects for this class", None)
                 self.start_btn.setEnabled(False)
+                print("No subjects found for this class")
                 return
             
             for subject in subjects:
                 display_name = f"{subject['name']} ({subject['code']})"
                 self.subject_combo.addItem(display_name, subject['id'])
+                print(f"  - Subject: {display_name}")
             
             self.start_btn.setEnabled(True)
         
         except Exception as e:
+            print(f"Error loading subjects: {e}")
+            import traceback
+            traceback.print_exc()
             QMessageBox.warning(
                 self,
                 "Warning",

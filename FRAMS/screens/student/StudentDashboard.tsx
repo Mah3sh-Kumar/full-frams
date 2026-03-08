@@ -274,23 +274,6 @@ export default function StudentDashboard() {
                     <View style={styles.welcomeContent}>
                         <Text style={styles.welcomeTitle}>{getGreeting()}, {studentName}!</Text>
                         <Text style={styles.welcomeSubtitle}>Here's your summary for the week.</Text>
-                        {metadata.className && (
-                            <View style={{ marginTop: 12, gap: 4 }}>
-                                <Text style={[styles.welcomeSubtitle, { opacity: 0.9, fontSize: 13 }]}>
-                                    Class: {metadata.className}
-                                </Text>
-                                {metadata.branch && (
-                                    <Text style={[styles.welcomeSubtitle, { opacity: 0.9, fontSize: 13 }]}>
-                                        Branch: {metadata.branch}
-                                    </Text>
-                                )}
-                                {metadata.academicYear && (
-                                    <Text style={[styles.welcomeSubtitle, { opacity: 0.9, fontSize: 13 }]}>
-                                        Year: {metadata.academicYear}
-                                    </Text>
-                                )}
-                            </View>
-                        )}
                     </View>
                     <View style={styles.quickActions}>
                         <TouchableOpacity
@@ -329,40 +312,40 @@ export default function StudentDashboard() {
                 {/* Quick Access Section */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: getTextColor() }]}>Quick Access</Text>
+                    
+                    <View style={styles.quickAccessRow}>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('Attendance' as never)}
+                            activeOpacity={0.7}
+                            style={styles.quickAccessCard}
+                        >
+                            <View style={[styles.quickAccessCardInner, { backgroundColor: getSurfaceColor() }]}>
+                                <View style={[styles.quickAccessIconContainer, { backgroundColor: `${tokens.colors.roles.student.main}15` }]}>
+                                    <Ionicons name="calendar" size={32} color={tokens.colors.roles.student.main} />
+                                </View>
+                                <Text style={[styles.quickAccessTitle, { color: getTextColor() }]}>Attendance</Text>
+                                <Text style={[styles.quickAccessSubtitle, { color: getTextSecondaryColor() }]}>
+                                    {stats.attendanceRate}% this month
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('Attendance' as never)}
-                        activeOpacity={0.7}
-                        style={styles.cardWrapper}
-                    >
-                        <View style={[styles.taskCard, { borderLeftColor: tokens.colors.roles.student.main, backgroundColor: getSurfaceColor() }]}>
-                            <View style={[styles.iconContainer, { backgroundColor: `${tokens.colors.roles.student.main}15` }]}>
-                                <Ionicons name="calendar" size={28} color={tokens.colors.roles.student.main} />
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('Assignments' as never)}
+                            activeOpacity={0.7}
+                            style={styles.quickAccessCard}
+                        >
+                            <View style={[styles.quickAccessCardInner, { backgroundColor: getSurfaceColor() }]}>
+                                <View style={[styles.quickAccessIconContainer, { backgroundColor: `${tokens.colors.warning.main}15` }]}>
+                                    <Ionicons name="book" size={32} color={tokens.colors.warning.main} />
+                                </View>
+                                <Text style={[styles.quickAccessTitle, { color: getTextColor() }]}>Assignments</Text>
+                                <Text style={[styles.quickAccessSubtitle, { color: getTextSecondaryColor() }]}>
+                                    {stats.pendingAssignments} pending
+                                </Text>
                             </View>
-                            <View style={styles.textContainer}>
-                                <Text style={[styles.taskTitle, { color: getTextColor() }]}>Attendance</Text>
-                                <Text style={[styles.taskDescription, { color: getTextSecondaryColor() }]}>View your recent attendance records and history.</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={getTextSecondaryColor()} />
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('Assignments' as never)}
-                        activeOpacity={0.7}
-                        style={styles.cardWrapper}
-                    >
-                        <View style={[styles.taskCard, { borderLeftColor: tokens.colors.warning.main, backgroundColor: getSurfaceColor() }]}>
-                            <View style={[styles.iconContainer, { backgroundColor: `${tokens.colors.warning.main}15` }]}>
-                                <Ionicons name="book" size={28} color={tokens.colors.warning.main} />
-                            </View>
-                            <View style={styles.textContainer}>
-                                <Text style={[styles.taskTitle, { color: getTextColor() }]}>Assignments</Text>
-                                <Text style={[styles.taskDescription, { color: getTextSecondaryColor() }]}>Check pending tasks and assignment submissions.</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={getTextSecondaryColor()} />
-                        </View>
-                    </TouchableOpacity>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Attendance Progress Section */}
@@ -370,30 +353,50 @@ export default function StudentDashboard() {
                     <Text style={[styles.sectionTitle, { color: getTextColor() }]}>Attendance Overview</Text>
                     <View style={[styles.attendanceCard, { backgroundColor: getSurfaceColor() }]}>
                         <View style={styles.attendanceHeader}>
-                            <ProgressRing 
-                                progress={stats.attendanceRate} 
-                                size={100} 
-                                strokeWidth={10}
-                                gradientColors={[tokens.colors.roles.student.main, tokens.colors.primary.main]}
-                            />
-                            <View style={styles.attendanceStats}>
+                            <View style={styles.progressRingContainer}>
+                                <ProgressRing 
+                                    progress={stats.attendanceRate} 
+                                    size={120} 
+                                    strokeWidth={12}
+                                    gradientColors={[tokens.colors.roles.student.main, tokens.colors.primary.main]}
+                                />
+                            </View>
+                            <View style={styles.attendanceStatsContainer}>
                                 <View style={styles.attendanceStat}>
-                                    <Text style={[styles.attendanceStatValue, { color: getTextColor() }]}>{stats.presentDays}</Text>
-                                    <Text style={[styles.attendanceStatLabel, { color: getTextSecondaryColor() }]}>Present</Text>
+                                    <View style={[styles.attendanceStatIcon, { backgroundColor: `${tokens.colors.success.main}15` }]}>
+                                        <Ionicons name="checkmark-circle" size={20} color={tokens.colors.success.main} />
+                                    </View>
+                                    <View>
+                                        <Text style={[styles.attendanceStatValue, { color: getTextColor() }]}>{stats.presentDays}</Text>
+                                        <Text style={[styles.attendanceStatLabel, { color: getTextSecondaryColor() }]}>Present</Text>
+                                    </View>
                                 </View>
                                 <View style={[styles.attendanceStatDivider, { backgroundColor: getTextSecondaryColor() }]} />
                                 <View style={styles.attendanceStat}>
-                                    <Text style={[styles.attendanceStatValue, { color: getTextColor() }]}>{stats.totalDays}</Text>
-                                    <Text style={[styles.attendanceStatLabel, { color: getTextSecondaryColor() }]}>Total Days</Text>
+                                    <View style={[styles.attendanceStatIcon, { backgroundColor: `${tokens.colors.info.main}15` }]}>
+                                        <Ionicons name="calendar" size={20} color={tokens.colors.info.main} />
+                                    </View>
+                                    <View>
+                                        <Text style={[styles.attendanceStatValue, { color: getTextColor() }]}>{stats.totalDays}</Text>
+                                        <Text style={[styles.attendanceStatLabel, { color: getTextSecondaryColor() }]}>Total Days</Text>
+                                    </View>
                                 </View>
                             </View>
                         </View>
                         {stats.currentStreak > 0 && (
                             <View style={[styles.streakBanner, { backgroundColor: `${tokens.colors.success.main}15` }]}>
-                                <Ionicons name="flame" size={20} color={tokens.colors.success.main} />
-                                <Text style={[styles.streakText, { color: tokens.colors.success.main }]}>
-                                    {stats.currentStreak} day streak! Keep it up!
-                                </Text>
+                                <View style={[styles.streakIconContainer, { backgroundColor: `${tokens.colors.success.main}25` }]}>
+                                    <Ionicons name="flame" size={24} color={tokens.colors.success.main} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.streakText, { color: tokens.colors.success.main }]}>
+                                        {stats.currentStreak} Day Streak!
+                                    </Text>
+                                    <Text style={[styles.streakSubtext, { color: getTextSecondaryColor() }]}>
+                                        Keep up the great work!
+                                    </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={20} color={tokens.colors.success.main} />
                             </View>
                         )}
                     </View>
@@ -512,6 +515,42 @@ const styles = StyleSheet.create({
     cardWrapper: {
         marginBottom: 16,
     },
+    quickAccessRow: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    quickAccessCard: {
+        flex: 1,
+        aspectRatio: 1,
+    },
+    quickAccessCardInner: {
+        flex: 1,
+        borderRadius: 20,
+        padding: 20,
+        justifyContent: 'space-between',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+    },
+    quickAccessIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    quickAccessTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 4,
+    },
+    quickAccessSubtitle: {
+        fontSize: 13,
+        lineHeight: 18,
+    },
     taskCard: {
         borderRadius: 16,
         borderLeftWidth: 4,
@@ -575,14 +614,27 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     attendanceCard: {
-        borderRadius: 16,
-        padding: 20,
-        elevation: 3,
+        borderRadius: 20,
+        padding: 24,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
     },
     attendanceHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 24,
+        marginBottom: 20,
+    },
+    progressRingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    attendanceStatsContainer: {
+        flex: 1,
+        gap: 16,
     },
     attendanceStats: {
         flex: 1,
@@ -591,12 +643,21 @@ const styles = StyleSheet.create({
     },
     attendanceStat: {
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    attendanceStatIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        justifyContent: 'center',
         alignItems: 'center',
     },
     attendanceStatValue: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: '700',
-        marginBottom: 4,
+        marginBottom: 2,
     },
     attendanceStatLabel: {
         fontSize: 12,
@@ -604,20 +665,30 @@ const styles = StyleSheet.create({
     },
     attendanceStatDivider: {
         width: 1,
+        height: 40,
         opacity: 0.2,
     },
     streakBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginTop: 16,
-        padding: 12,
+        gap: 12,
+        padding: 16,
+        borderRadius: 16,
+    },
+    streakIconContainer: {
+        width: 48,
+        height: 48,
         borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     streakText: {
-        fontSize: 14,
-        fontWeight: '600',
-        flex: 1,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    streakSubtext: {
+        fontSize: 13,
+        marginTop: 2,
     },
     alertCard: {
         flexDirection: 'row',
@@ -641,37 +712,41 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     eventsCard: {
-        borderRadius: 16,
-        padding: 16,
-        elevation: 3,
+        borderRadius: 20,
+        padding: 20,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
     },
     eventItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 16,
     },
     eventIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 10,
+        width: 48,
+        height: 48,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 16,
     },
     eventContent: {
         flex: 1,
     },
     eventTitle: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '600',
         marginBottom: 4,
     },
     eventDate: {
-        fontSize: 12,
+        fontSize: 13,
     },
     eventDivider: {
         height: 1,
-        marginLeft: 52,
+        marginLeft: 64,
         opacity: 0.1,
     },
 });
