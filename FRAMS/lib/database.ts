@@ -401,12 +401,22 @@ export async function gradeSubmission(
             return { data: null, error: 'Score must be a non-negative number' };
         }
 
+        // First get the current submission to preserve student's notes
+        const { data: currentSubmission } = await supabase
+            .from('student_assignments')
+            .select('remarks')
+            .eq('id', submissionId)
+            .single();
+
+        const studentNotes = currentSubmission?.remarks;
+
         const { data, error } = await supabase
             .from('student_assignments')
             .update({
                 score,
-                remarks: remarks || '',
-                status: 'graded'
+                teacher_remarks: remarks || '', // Store teacher's remarks separately
+                status: 'graded',
+                graded_at: new Date().toISOString()
             })
             .eq('id', submissionId)
             .select()
@@ -471,7 +481,7 @@ export async function fetchAttendanceByDateRange(
                 id,
                 date,
                 status,
-                subjects (name)
+                subject_id
             `)
             .eq('student_id', studentId)
             .gte('date', startDate)
@@ -482,10 +492,35 @@ export async function fetchAttendanceByDateRange(
             query = query.eq('subject_id', subjectId);
         }
 
-        const { data, error } = await query;
+        const { data: attendanceData, error } = await query;
 
         if (error) throw error;
-        return { data: data || [], error: null };
+
+        // Fetch subject names separately if we have attendance records
+        if (attendanceData && attendanceData.length > 0) {
+            const subjectIds = [...new Set(attendanceData.map(a => a.subject_id))];
+            
+            const { data: subjects, error: subjectsError } = await supabase
+                .from('subjects')
+                .select('id, name')
+                .in('id', subjectIds);
+
+            if (subjectsError) {
+                console.error('Error fetching subjects:', subjectsError);
+            }
+
+            // Map subjects to attendance records
+            const subjectsMap = new Map(subjects?.map(s => [s.id, s.name]) || []);
+            
+            const enrichedData = attendanceData.map(attendance => ({
+                ...attendance,
+                subjects: { name: subjectsMap.get(attendance.subject_id) || 'Unknown' }
+            }));
+
+            return { data: enrichedData, error: null };
+        }
+
+        return { data: attendanceData || [], error: null };
     } catch (error: any) {
         console.error('Error fetching attendance by date range:', error);
         return { data: [], error: getErrorMessage(error) };

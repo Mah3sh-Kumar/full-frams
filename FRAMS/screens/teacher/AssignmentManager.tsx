@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function AssignmentManager() {
     const { user } = useAuth();
-    const { tokens, getTextColor, getTextSecondaryColor, getSurfaceColor } = useTheme();
+    const { tokens, getTextColor, getTextSecondaryColor, getSurfaceColor, getBorderColor } = useTheme();
     const [tab, setTab] = useState('all');
 
     // Create Mode State
@@ -988,15 +988,106 @@ export default function AssignmentManager() {
                         Student: {gradingSubmission?.student_name}
                     </Text>
 
+                    {/* Submission Details */}
+                    {gradingSubmission?.submission_url && (
+                        <View style={{ 
+                            marginBottom: tokens.spacing.md, 
+                            padding: tokens.spacing.md,
+                            backgroundColor: tokens.colors.info.light + '20',
+                            borderRadius: tokens.borders.radius.medium,
+                            borderWidth: 1,
+                            borderColor: tokens.colors.info.main + '30'
+                        }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: tokens.spacing.sm }}>
+                                <Ionicons name="document-attach" size={20} color={tokens.colors.info.main} />
+                                <Text style={{ 
+                                    marginLeft: tokens.spacing.sm, 
+                                    fontWeight: '600',
+                                    color: getTextColor() 
+                                }}>
+                                    Submitted File
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    padding: tokens.spacing.sm,
+                                    backgroundColor: getSurfaceColor(),
+                                    borderRadius: tokens.borders.radius.small,
+                                    marginBottom: tokens.spacing.sm
+                                }}
+                                onPress={async () => {
+                                    try {
+                                        const supported = await Linking.canOpenURL(gradingSubmission.submission_url);
+                                        if (supported) {
+                                            await Linking.openURL(gradingSubmission.submission_url);
+                                        } else {
+                                            Alert.alert('Error', 'Cannot open this file type.');
+                                        }
+                                    } catch (error) {
+                                        console.error('Error opening submission:', error);
+                                        Alert.alert('Error', 'Failed to open submission file.');
+                                    }
+                                }}
+                            >
+                                <Ionicons name="open-outline" size={18} color={tokens.colors.primary.main} />
+                                <Text style={{ 
+                                    marginLeft: tokens.spacing.sm,
+                                    color: tokens.colors.primary.main,
+                                    fontWeight: '500',
+                                    flex: 1
+                                }}>
+                                    View Submitted File
+                                </Text>
+                                <Ionicons name="chevron-forward" size={18} color={tokens.colors.primary.main} />
+                            </TouchableOpacity>
+                            
+                            {gradingSubmission?.submitted_at && (
+                                <Text style={{ fontSize: 12, color: getTextSecondaryColor() }}>
+                                    Submitted: {new Date(gradingSubmission.submitted_at).toLocaleString()}
+                                </Text>
+                            )}
+                        </View>
+                    )}
+
+                    {/* Student's Notes */}
+                    {gradingSubmission?.remarks && gradingSubmission.status === 'submitted' && (
+                        <View style={{ 
+                            marginBottom: tokens.spacing.md,
+                            padding: tokens.spacing.md,
+                            backgroundColor: getSurfaceColor(),
+                            borderRadius: tokens.borders.radius.medium,
+                            borderWidth: 1,
+                            borderColor: getBorderColor()
+                        }}>
+                            <Text style={{ 
+                                fontWeight: '600', 
+                                marginBottom: tokens.spacing.xs,
+                                color: getTextColor()
+                            }}>
+                                Student's Notes:
+                            </Text>
+                            <Text style={{ color: getTextSecondaryColor(), fontStyle: 'italic' }}>
+                                "{gradingSubmission.remarks}"
+                            </Text>
+                        </View>
+                    )}
+
                     <Input
                         label="Score"
                         value={score}
                         onChangeText={setScore}
+                        keyboardType="numeric"
+                        placeholder={`Enter score (max: ${selectedAssignment?.max_score || 100})`}
                     />
                     <Input
-                        label="Remarks"
+                        label="Teacher's Remarks"
                         value={remarks}
                         onChangeText={setRemarks}
+                        multiline
+                        numberOfLines={3}
+                        placeholder="Add feedback for the student..."
                     />
 
                     <View style={styles.modalActions}>
