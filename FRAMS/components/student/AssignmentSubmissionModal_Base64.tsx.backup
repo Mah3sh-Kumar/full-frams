@@ -1,0 +1,135 @@
+// ALTERNATIVE UPLOAD METHOD USING BASE64
+// If ArrayBuffer method fails, try this approach
+
+// Replace the handleSubmit function with this version:
+
+const handleSubmit = async () => {
+    if (!selectedFile) {
+        Alert.alert('No File Selected', 'Please select a file to submit.');
+        return;
+    }
+
+    setUploading(true);
+
+    try {
+        // Upload file to Supabase Storage
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${assignmentId}/${studentId}_${Date.now()}.${fileExt}`;
+
+        console.log('📤 [Submission] Starting upload:', fileName);
+        console.log('📄 [Submission] File details:', {
+            name: selectedFile.name,
+            size: selectedFile.size,
+            mimeType: selectedFile.mimeType,
+            uri: selectedFile.uri
+        });
+
+        // METHOD 1: Try with FileReader and base64
+        const response = await fetch(selectedFile.uri);
+        const blob = await response.blob();
+        
+        // Convert blob to base64
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+        
+        const base64Data = await base64Promise as string;
+        const base64String = base64Data.split(',')[1]; // Remove data:mime;base64, prefix
+        
+        console.log('📦 [Submission] Base64 created, length:', base64String.length);
+
+        // Decode base64 to binary
+        const binaryString = atob(base64String);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        console.log('🔄 [Submission] Uploading to Supabase...');
+
+        // Upload using Supabase storage client
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('student-submissions')
+            .upload(fileName, bytes.buffer, {
+                contentType: selectedFile.mimeType,
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            console.error('❌ [Submission] Upload error:', uploadError);
+            console.error('❌ [Submission] Error details:', JSON.stringify(uploadError, null, 2));
+            throw uploadError;
+        }
+
+        console.log('✅ [Submission] File uploaded successfully:', uploadData);
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+            .from('student-submissions')
+            .getPublicUrl(fileName);
+
+        console.log('📎 [Submission] Public URL:', publicUrl);
+
+        // Create or update submission record
+        const { error: dbError } = await supabase
+            .from('student_assignments')
+            .upsert({
+                student_id: studentId,
+                assignment_id: assignmentId,
+                status: 'submitted',
+                submission_url: publicUrl,
+                remarks: notes || null,
+                submitted_at: new Date().toISOString(),
+            }, {
+                onConflict: 'student_id,assignment_id',
+                ignoreDuplicates: false
+            });
+
+        if (dbError) {
+            console.error('❌ [Submission] Database error:', dbError);
+            throw dbError;
+        }
+
+        console.log('✅ [Submission] Record created/updated in database');
+
+        Alert.alert(
+            'Success!',
+            'Your assignment has been submitted successfully.',
+            [
+                {
+                    text: 'OK',
+                    onPress: () => {
+                        setSelectedFile(null);
+                        setNotes('');
+                        onSuccess();
+                        onClose();
+                    }
+                }
+            ]
+        );
+    } catch (error: any) {
+        console.error('❌ [Submission] Error:', error);
+        
+        let errorMessage = 'Failed to submit assignment. Please try again.';
+        
+        if (error.message?.includes('Network request failed')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message?.includes('Bucket not found')) {
+            errorMessage = 'Storage configuration error. Please contact support.';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        Alert.alert(
+            'Submission Failed',
+            errorMessage,
+            [{ text: 'OK' }]
+        );
+    } finally {
+        setUploading(false);
+    }
+};

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Alert, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, Alert, Text, TouchableOpacity, TextInput, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { useTheme } from '../../lib/design-system/ThemeContext';
@@ -10,6 +10,7 @@ import LoadingSpinner from '../../components/design-system/feedback/LoadingSpinn
 import { Stack, Row } from '../../components/design-system/layout';
 import EmptyState from '../../components/EmptyState';
 import CountdownTimer from '../../components/CountdownTimer';
+import AssignmentDetailModal from '../../components/student/AssignmentDetailModal';
 
 type Assignment = {
     id: string;
@@ -24,6 +25,7 @@ type Assignment = {
         description: string;
         due_date: string;
         max_score: number;
+        attachment_url: string | null;
         subjects: {
             name: string;
         } | null;
@@ -37,6 +39,9 @@ export default function AssignmentScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [studentId, setStudentId] = useState<string>('');
 
     useEffect(() => {
         fetchAssignments();
@@ -44,27 +49,132 @@ export default function AssignmentScreen() {
 
     async function fetchAssignments() {
         try {
+            console.log('🔍 [AssignmentScreen] Starting fetchAssignments...');
+            
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            if (!user) {
+                console.log('❌ [AssignmentScreen] No user found');
+                return;
+            }
+            console.log('✅ [AssignmentScreen] User ID:', user.id);
+            setStudentId(user.id);
 
-            const { data: student } = await supabase
+            // Get student's class
+            const { data: student, error: studentError } = await supabase
                 .from('students')
-                .select('id')
+                .select('id, class_id')
                 .eq('id', user.id)
                 .single();
 
-            if (student) {
-                const { data, error } = await supabase
-                    .from('student_assignments')
-                    .select('*, assignments(*, subjects(name))')
-                    .eq('student_id', student.id)
-                    .order('created_at', { ascending: false });
+            console.log('📊 [AssignmentScreen] Student data:', student);
+            console.log('📊 [AssignmentScreen] Student error:', studentError);
 
-                if (error) console.error(error);
-                else setAssignments(data || []);
+            if (!student || !student.class_id) {
+                console.log('❌ [AssignmentScreen] No student or class_id found');
+                setLoading(false);
+                setRefreshing(false);
+                return;
             }
+            console.log('✅ [AssignmentScreen] Student class_id:', student.class_id);
+
+            // Get subjects for the student's class
+            const { data: subjects, error: subjectsError } = await supabase
+                .from('subjects')
+                .select('id, name')
+                .eq('class_id', student.class_id)
+                .eq('is_active', true)
+                .is('deleted_at', null);
+
+            console.log('📊 [AssignmentScreen] Subjects data:', subjects);
+            console.log('📊 [AssignmentScreen] Subjects error:', subjectsError);
+
+            if (!subjects || subjects.length === 0) {
+                console.log('❌ [AssignmentScreen] No subjects found for class');
+                setLoading(false);
+                setRefreshing(false);
+                return;
+            }
+
+            const subjectIds = subjects.map(s => s.id);
+            console.log('✅ [AssignmentScreen] Subject IDs:', subjectIds);
+            
+            // Create a map of subject names by ID
+            const subjectsMap = new Map(subjects.map(s => [s.id, s.name]));
+
+            // Fetch assignments for the student's subjects
+            const { data: allAssignments, error: assignmentsError } = await supabase
+                .from('assignments')
+                .select('id, title, description, due_date, max_score, subject_id, attachment_url')
+                .in('subject_id', subjectIds)
+                .order('due_date', { ascending: false });
+
+            console.log('📊 [AssignmentScreen] Assignments data:', allAssignments);
+            console.log('📊 [AssignmentScreen] Assignments error:', assignmentsError);
+
+            if (assignmentsError) {
+                console.error('❌ [AssignmentScreen] Error fetching assignments:', assignmentsError);
+                setLoading(false);
+                setRefreshing(false);
+                return;
+            }
+
+            if (!allAssignments || allAssignments.length === 0) {
+                console.log('⚠️ [AssignmentScreen] No assignments found for these subjects');
+                setAssignments([]);
+                setLoading(false);
+                setRefreshing(false);
+                return;
+            }
+
+            console.log('✅ [AssignmentScreen] Found', allAssignments.length, 'assignments');
+
+            // Fetch student's submission records
+            const assignmentIds = allAssignments.map(a => a.id);
+            const { data: submissions, error: submissionsError } = await supabase
+                .from('student_assignments')
+                .select('assignment_id, status, score, remarks, submission_url, created_at')
+                .eq('student_id', student.id)
+                .in('assignment_id', assignmentIds);
+
+            console.log('📊 [AssignmentScreen] Submissions data:', submissions);
+            console.log('📊 [AssignmentScreen] Submissions error:', submissionsError);
+
+            // Create a map of submissions by assignment_id
+            const submissionsMap = new Map(
+                submissions?.map(s => [s.assignment_id, s]) || []
+            );
+
+            // Merge assignments with submission status
+            const mergedAssignments = allAssignments.map(assignment => {
+                const submission = submissionsMap.get(assignment.id);
+                
+                return {
+                    id: submission?.assignment_id || assignment.id,
+                    assignment_id: assignment.id,
+                    status: submission?.status || 'pending',
+                    score: submission?.score || null,
+                    remarks: submission?.remarks || null,
+                    submission_url: submission?.submission_url || null,
+                    created_at: submission?.created_at || assignment.due_date,
+                    assignments: {
+                        title: assignment.title,
+                        description: assignment.description,
+                        due_date: assignment.due_date,
+                        max_score: assignment.max_score,
+                        attachment_url: assignment.attachment_url,
+                        subjects: {
+                            name: subjectsMap.get(assignment.subject_id) || 'Unknown Subject'
+                        }
+                    }
+                };
+            });
+
+            console.log('✅ [AssignmentScreen] Merged assignments:', mergedAssignments);
+            console.log('✅ [AssignmentScreen] Setting', mergedAssignments.length, 'assignments to state');
+            
+            setAssignments(mergedAssignments as Assignment[]);
         } catch (e) {
-            console.error(e);
+            console.error('❌ [AssignmentScreen] Error in fetchAssignments:', e);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -96,6 +206,43 @@ export default function AssignmentScreen() {
 
     function isOverdue(dueDate: string, status: string) {
         return status === 'pending' && new Date(dueDate) < new Date();
+    }
+
+    async function handleOpenAttachment(attachmentUrl: string | null) {
+        if (!attachmentUrl) {
+            Alert.alert('No Attachment', 'This assignment has no attached file.');
+            return;
+        }
+
+        try {
+            const supported = await Linking.canOpenURL(attachmentUrl);
+            if (supported) {
+                await Linking.openURL(attachmentUrl);
+            } else {
+                Alert.alert('Error', 'Cannot open this file type.');
+            }
+        } catch (error) {
+            console.error('Error opening attachment:', error);
+            Alert.alert('Error', 'Failed to open attachment.');
+        }
+    }
+
+    function handleAssignmentPress(assignment: Assignment) {
+        setSelectedAssignment(assignment);
+        setModalVisible(true);
+    }
+
+    function handleCloseModal() {
+        setModalVisible(false);
+        setSelectedAssignment(null);
+    }
+
+    function handleSubmitAssignment() {
+        // This is now handled by the submission modal
+    }
+
+    function handleRefreshAfterSubmission() {
+        fetchAssignments();
     }
 
     const stats = {
@@ -324,6 +471,15 @@ export default function AssignmentScreen() {
 
     return (
         <View style={styles.container}>
+            <AssignmentDetailModal
+                visible={modalVisible}
+                assignment={selectedAssignment}
+                studentId={studentId}
+                onClose={handleCloseModal}
+                onSubmit={handleSubmitAssignment}
+                onRefresh={handleRefreshAfterSubmission}
+            />
+            
             <ScrollView
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -432,73 +588,100 @@ export default function AssignmentScreen() {
                                 if (!assignment) return null;
 
                                 const overdue = isOverdue(assignment.due_date, item.status);
+                                const hasAttachment = !!assignment.attachment_url;
 
                                 return (
-                                    <Card key={item.id} variant="default" style={styles.assignmentCard}>
-                                        <View style={styles.cardContent}>
-                                            <View style={styles.cardHeader}>
-                                                <View style={styles.cardTitleContainer}>
-                                                    <Text style={styles.assignmentTitle}>{assignment.title}</Text>
-                                                    <Text style={styles.subjectName}>
-                                                        {assignment.subjects?.name || 'Unknown Subject'}
-                                                    </Text>
-                                                </View>
-                                                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
-                                                    <Ionicons name={getStatusIcon(item.status)} size={14} color={getStatusColor(item.status)} />
-                                                    <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                                                        {item.status.toUpperCase()}
-                                                    </Text>
-                                                </View>
-                                            </View>
-
-                                            {assignment.description && (
-                                                <Text style={styles.description} numberOfLines={2}>
-                                                    {assignment.description}
-                                                </Text>
-                                            )}
-
-                                            <View style={styles.cardFooter}>
-                                                <View style={styles.dueDateContainer}>
-                                                    {item.status === 'pending' && !overdue ? (
-                                                        <CountdownTimer dueDate={assignment.due_date} />
-                                                    ) : (
-                                                        <>
-                                                            <Ionicons
-                                                                name={overdue ? "alert-circle" : "calendar"}
-                                                                size={16}
-                                                                color={overdue ? tokens.colors.error.main : getTextSecondaryColor()}
-                                                            />
-                                                            <Text style={[
-                                                                styles.dueDate,
-                                                                overdue && styles.overdueText
-                                                            ]}>
-                                                                {overdue ? 'Overdue' : 'Completed'}
-                                                            </Text>
-                                                        </>
-                                                    )}
-                                                </View>
-
-                                                {item.status === 'graded' && item.score !== null && (
-                                                    <View style={styles.scoreBadge}>
-                                                        <Ionicons name="star" size={14} color={tokens.colors.success.main} />
-                                                        <Text style={styles.scoreText}>
-                                                            {item.score}/{assignment.max_score}
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        onPress={() => handleAssignmentPress(item)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Card variant="default" style={styles.assignmentCard}>
+                                            <View style={styles.cardContent}>
+                                                <View style={styles.cardHeader}>
+                                                    <View style={styles.cardTitleContainer}>
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                            <Text style={styles.assignmentTitle}>{assignment.title}</Text>
+                                                            {hasAttachment && (
+                                                                <Ionicons 
+                                                                    name="attach" 
+                                                                    size={18} 
+                                                                    color={tokens.colors.primary.main} 
+                                                                />
+                                                            )}
+                                                        </View>
+                                                        <Text style={styles.subjectName}>
+                                                            {assignment.subjects?.name || 'Unknown Subject'}
                                                         </Text>
                                                     </View>
+                                                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
+                                                        <Ionicons name={getStatusIcon(item.status)} size={14} color={getStatusColor(item.status)} />
+                                                        <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+                                                            {item.status.toUpperCase()}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+
+                                                {assignment.description && (
+                                                    <Text style={styles.description} numberOfLines={2}>
+                                                        {assignment.description}
+                                                    </Text>
                                                 )}
 
-                                                {item.status === 'pending' && (
-                                                    <Button
-                                                        variant="primary"
-                                                        size="small"
-                                                        onPress={() => Alert.alert('Submit', 'Submission interface coming soon!')}
-                                                    >
-                                                        Submit
-                                                    </Button>
-                                                )}
+                                                <View style={styles.cardFooter}>
+                                                    <View style={styles.dueDateContainer}>
+                                                        {item.status === 'pending' && !overdue ? (
+                                                            <CountdownTimer dueDate={assignment.due_date} />
+                                                        ) : (
+                                                            <>
+                                                                <Ionicons
+                                                                    name={overdue ? "alert-circle" : "calendar"}
+                                                                    size={16}
+                                                                    color={overdue ? tokens.colors.error.main : getTextSecondaryColor()}
+                                                                />
+                                                                <Text style={[
+                                                                    styles.dueDate,
+                                                                    overdue && styles.overdueText
+                                                                ]}>
+                                                                    {overdue ? 'Overdue' : 'Completed'}
+                                                                </Text>
+                                                            </>
+                                                        )}
+                                                    </View>
+
+                                                    {item.status === 'graded' && item.score !== null && (
+                                                        <View style={styles.scoreBadge}>
+                                                            <Ionicons name="star" size={14} color={tokens.colors.success.main} />
+                                                            <Text style={styles.scoreText}>
+                                                                {item.score}/{assignment.max_score}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+
+                                                    {item.status === 'pending' && (
+                                                        <TouchableOpacity
+                                                            style={{
+                                                                paddingVertical: 8,
+                                                                paddingHorizontal: 16,
+                                                                borderRadius: 14,
+                                                                backgroundColor: tokens.colors.roles.student.main,
+                                                            }}
+                                                            onPress={() => handleAssignmentPress(item)}
+                                                            activeOpacity={0.8}
+                                                        >
+                                                            <Text style={{
+                                                                fontSize: 13,
+                                                                fontWeight: '600',
+                                                                color: '#FFFFFF',
+                                                            }}>
+                                                                Submit
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </View>
                                             </View>
-                                        </View>
-                                    </Card>
+                                        </Card>
+                                    </TouchableOpacity>
                                 );
                             })}
                         </Stack>
